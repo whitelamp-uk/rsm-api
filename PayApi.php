@@ -1,5 +1,7 @@
 <?php
 
+namespace Blotto\Rsm;
+
 class PayApi {
 
     private  $bogon_file;
