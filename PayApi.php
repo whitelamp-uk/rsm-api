@@ -190,7 +190,7 @@ class PayApi {
         $now = new \DateTime();
         $then = new \DateTime ($start_date);
         $then->modify ('first day of this month');
-        while ($the <$now) {
+        while ($then<$now) {
 
             $start = $then->format ('01/m/Y');
             $end   = $then->format ('t/m/Y');
