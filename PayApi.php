@@ -187,13 +187,13 @@ class PayApi {
         $this->execute (__DIR__.'/create_collection.sql');
         $this->execute (__DIR__.'/create_mandate.sql');
 
-        $now = new DateTime();
-        $then = new DateTime($start_date);
-        $then->modify('first day of this month');
-        while ($then < $now) {
+        $now = new \DateTime();
+        $then = new \DateTime ($start_date);
+        $then->modify ('first day of this month');
+        while ($the <$now) {
 
-            $start = $then->format('01/m/Y');
-            $end   = $then->format('t/m/Y');
+            $start = $then->format ('01/m/Y');
+            $end   = $then->format ('t/m/Y');
   
             $response           = $this->do_mandates ($start,$end,$rowsm)['response'];
             if ($response['status']!='SUCCESS') {
@@ -203,7 +203,7 @@ class PayApi {
             }
             if ($response['noOfRecords'] > 0) {
                 if ($response['noOfRecords'] == 1) { 
-                    $data = array($response['mandates']['mandate']);
+                    $data = array( $response['mandates']['mandate']);
                 } else {
                     $data = $response['mandates']['mandate'];
                 }
@@ -231,7 +231,7 @@ class PayApi {
                     $this->fieldsc
                 );
             }
-            $then->modify('+1 month');
+            $then->modify ('+1 month');
         }
         $this->table_alter ('rsm_collection');
         $this->table_alter ('rsm_mandate');
@@ -283,7 +283,7 @@ class PayApi {
         }
         $filters     .= '
     </filters>';
-        return $this->request_start($what).$filters.$this->request_end();
+        return $this->request_start ($what).$filters.$this->request_end();
     }
 
     private function request_start ($cmd) {
