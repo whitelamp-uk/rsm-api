@@ -186,21 +186,19 @@ class PayApi {
     public function import ($start_date,$rowsm=0,$rowsc=0) {
         $this->execute (__DIR__.'/create_collection.sql');
         $this->execute (__DIR__.'/create_mandate.sql');
-
         $now = new \DateTime();
         $then = new \DateTime ($start_date);
         $then->modify ('first day of this month');
         while ($then<$now) {
-
             $start = $then->format ('01/m/Y');
             $end   = $then->format ('t/m/Y');
-  
-            $response           = $this->do_mandates ($start,$end,$rowsm)['response'];
+            $response = $this->do_mandates ($start,$end,$rowsm)['response'];
             if ($response['status']!='SUCCESS') {
                 $this->error_log (123,'Mandate request was unsuccessful');
                 throw new \Exception ('API error (mandate): '.$response['status']);
                 return false;
             }
+            echo "Received {$response['noOfRecords']} mandates\n";
             if ($response['noOfRecords'] > 0) {
                 if ($response['noOfRecords'] == 1) { 
                     $data = array( $response['mandates']['mandate']);
@@ -219,6 +217,7 @@ class PayApi {
                 throw new \Exception ('API error (collection): '.$response['status']);
                 return false;
             }
+            echo "Received {$response['noOfRecords']} collections\n";
             if ($response['noOfRecords'] > 0) {
                 if ($response['noOfRecords'] == 1) {
                     $data = array($response['collections']['collection']);
@@ -250,6 +249,7 @@ class PayApi {
         echo $sql;
         try {
             $this->connection->query ($sql);
+            tee ("Output {$this->connection->affected_rows} collections\n");
         }
         catch (\mysqli_sql_exception $e) {
             $this->error_log (121,'SQL insert failed: '.$e->getMessage());
@@ -264,6 +264,7 @@ class PayApi {
         echo $sql;
         try {
             $this->connection->query ($sql);
+            tee ("Output {$this->connection->affected_rows} mandates\n");
         }
         catch (\mysqli_sql_exception $e) {
             $this->error_log (120,'SQL insert failed: '.$e->getMessage());
@@ -371,6 +372,7 @@ class PayApi {
         $sql                = substr ($sql,0,-2);
         try {
             $this->connection->query ($sql);
+            echo "Inserted {$this->connection->affected_rows} rows into `$tablename`\n";
         }
         catch (\mysqli_sql_exception $e) {
             $this->error_log (115,'SQL insert failed: '.$e->getMessage());
