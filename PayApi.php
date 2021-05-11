@@ -48,7 +48,7 @@ class PayApi {
     private $org;
 
 
-    public function __construct ($connection,$org) {
+    public function __construct ($connection,$org=null) {
         $this->connection   = $connection;
         $this->org          = $org;
         $this->setup ();
