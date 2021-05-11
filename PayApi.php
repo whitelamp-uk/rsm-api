@@ -20,7 +20,6 @@ class PayApi {
     public   $diagnostic;
     public   $error;
     public   $errorCode = 0;
-
     // Translate from API mandate fields to table fields
     private $fieldsm = array (
         'ddRefNo'             => 'DDRefOrig',
@@ -46,9 +45,12 @@ class PayApi {
         'payStatus'           => 'PayStatus',
         'paidAmount'          => 'PaidAmount',
     );
+    private $org;
 
-    public function __construct ($connection) {
+
+    public function __construct ($connection,$org) {
         $this->connection   = $connection;
+        $this->org          = $org;
         $this->setup ();
     }
 
