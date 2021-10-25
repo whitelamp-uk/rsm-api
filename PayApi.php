@@ -219,7 +219,7 @@ class PayApi {
                 throw new \Exception ('API error (collection): '.$response['status']);
                 return false;
             }
-            echo "Received {$response['noOfRecords']} collections\n";
+            echo "Received {$response['noOfRecords']} collections [ $start thru $end ]\n";
             if ($response['noOfRecords'] > 0) {
                 if ($response['noOfRecords'] == 1) {
                     $data = array($response['collections']['collection']);
