@@ -200,7 +200,7 @@ class PayApi {
                 throw new \Exception ('API error (mandate): '.$response['status']);
                 return false;
             }
-            echo "Received {$response['noOfRecords']} mandates\n";
+            echo "Received {$response['noOfRecords']} mandates [ $start thru $end ]\n";
             if ($response['noOfRecords'] > 0) {
                 if ($response['noOfRecords'] == 1) { 
                     $data = array( $response['mandates']['mandate']);
