@@ -249,20 +249,15 @@ class PayApi {
             $what = 'setMandates';
             $body = "<mandates>";
             foreach ($mandates as $m) {
+                if (trim($m['Type'])!='C') {
+                    throw new \Exception ('Currently treating an FLC record not of type "C" (= create new customer) as an error');
+                    return false;
+                }
 
-print_r ($m);
-// TODO: This needs redoing for tmp_supporter as associative array
-//       but in the new FLC formatted version of tmp_supporter
-// It should send not one bit more data to RSM than the files
-// we give to Kevin: snowy:/home/sct/blotto/*/rsync/candidates.*
-                $name  = $m[14].' '.$m[15].' '.$m[16];
-                $phone = $m[20] ? $m[20] : $m[21]; // Use mobile if possible
+// TODO: don't know what this bit does yet...
                 $action = (strtolower($m[1]) == 'c') ? 'N' : 'A';
                 $action = 'N';
-                $start_date = '01/10/2020'; // TODO sort this out
-                $payment_ref = '213456789'; // TODO sort this out
 
-// This bit is roughly right
                 $body .= "<mandate>";
                 $body .= "<tradingName>".RSM_TRADING_NAME."</tradingName>";
                 $body .= "<contactName>".RSM_CONTACT_NAME."</contactName>";
@@ -281,7 +276,7 @@ print_r ($m);
                 //$body .= "<ddRefNo></ddRefNo>";
                 $body .= "<amount>{$m['Amount']}</amount>";
                 $body .= "<frequency>{$m['Freq']}</frequency>";
-                $body .= "<startDate>{$m['StartDate']}</startDate>";
+                $body .= "<startDate>".collection_startdate(date('Y-m-d'),$m['PayDay'])."</startDate>";
                 //$body .= "<mandateType>{$m[]}</mandateType>";
                 //$body .= "<shortId>{$m[]}</shortId>";
                 //$body .= "<endDate>{$m[]}</endDate>";
@@ -292,16 +287,15 @@ print_r ($m);
             $request = $this->request_start ($what).$body.$this->request_end();
             $response = $this->handle ($what, $request);
 
-
 // TODO: Interpret response
 print_r ($response);
 $ok = false;
-
+$e = 'Error';
 
             if ($ok) {
                 return true;
             }
-            $this->error_log (121,'Failed to send new mandates using rm-api');
+            $this->error_log (121,$e);
             throw new \Exception ('Failed to send new mandates using rm-api');
             return false;
         }
