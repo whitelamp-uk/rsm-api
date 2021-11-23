@@ -78,53 +78,6 @@ class PayApi {
         }
     }
 
-    public function create_mandates ($csvfile)  {
-        if (($handle = fopen($csvfile, "r")) !== FALSE) {
-            $what = 'setMandates';
-            $body = "<mandates>";
-            fgets($handle); // skip header line
-            while (($data = fgetcsv($handle)) !== FALSE) {
-                $name  = $data[14].' '.$data[15].' '.$data[16];
-                $phone = $data[20] ? $data[20] : $data[21]; // Use mobile if possible
-                $action = (strtolower($data[1]) == 'c') ? 'N' : 'A';
-                $action = 'N';
-                $frequency = 1; // TODO sort this out
-                $start_date = '01/10/2020'; // TODO sort this out
-                $payment_ref = '213456789'; // TODO sort this out
-                $body .= "<mandate>";
-
-                $body .= "<tradingName>".RSM_TRADING_NAME."</tradingName>";
-                $body .= "<contactName>".RSM_CONTACT_NAME."</contactName>";
-                $body .= "<address1>".$data[22]."</address1>";
-                $body .= "<address2>".$data[23]."</address2>";
-                $body .= "<address3>".$data[24]."</address3>";
-                $body .= "<town>".$data[25]."</town>";
-                $body .= "<postcode>".$data[27]."</postcode>";
-                $body .= "<phone>".$phone."</phone>";
-                $body .= "<email>".$data[19]."</email>";
-                $body .= "<clientRef>".$data[0]."</clientRef>";
-                $body .= "<accountName>".$data[4]."</accountName>";
-                $body .= "<accountNumber>".$data[6]."</accountNumber>";
-                $body .= "<sortCode>".$data[5]."</sortCode>";
-                $body .= "<action>".$action."</action>";
-                //$body .= "<ddRefNo></ddRefNo>";
-                $body .= "<amount>".$data[7]."</amount>";
-                $body .= "<frequency>".$frequency."</frequency>";
-                $body .= "<startDate>".$start_date."</startDate>";
-                //$body .= "<mandateType>".$data[]."</mandateType>";
-                //$body .= "<shortId>".$data[]."</shortId>";
-                //$body .= "<endDate>".$data[]."</endDate>";
-                $body .= "<paymentRef>".$data[0]."</paymentRef>";
-
-                $body .= "</mandate>";
-            }
-            fclose($handle);
-            $body .= "</mandates>";
-            $request = $this->request_start ($what).$body.$this->request_end();
-            print_r($this->handle($what, $request));
-        }
-    }
-
     private function curl_post ($url,$post,$options=[]) {
     /*
         * Send a POST requst using cURL
@@ -291,6 +244,69 @@ class PayApi {
         $this->output_collections ();
     }
 
+    public function insert_mandates ($mandates)  {
+        if (($handle=fopen($file,'r'))!==false) {
+            $what = 'setMandates';
+            $body = "<mandates>";
+            foreach ($mandates as $m) {
+
+print_r ($m);
+// TODO: This needs redoing for tmp_supporter as associative array
+//       but in the new FLC formatted version of tmp_supporter
+// It should send not one bit more data to RSM than the files
+// we give to Kevin: snowy:/home/sct/blotto/*/rsync/candidates.*
+                $name  = $m[14].' '.$m[15].' '.$m[16];
+                $phone = $m[20] ? $m[20] : $m[21]; // Use mobile if possible
+                $action = (strtolower($m[1]) == 'c') ? 'N' : 'A';
+                $action = 'N';
+                $start_date = '01/10/2020'; // TODO sort this out
+                $payment_ref = '213456789'; // TODO sort this out
+
+// This bit is roughly right
+                $body .= "<mandate>";
+                $body .= "<tradingName>".RSM_TRADING_NAME."</tradingName>";
+                $body .= "<contactName>".RSM_CONTACT_NAME."</contactName>";
+                $body .= "<address1></address1>";
+                $body .= "<address2></address2>";
+                $body .= "<address3></address3>";
+                $body .= "<town></town>";
+                $body .= "<postcode></postcode>";
+                $body .= "<phone></phone>";
+                $body .= "<email></email>";
+                $body .= "<clientRef>{$m['ClientRef']}</clientRef>";
+                $body .= "<accountName>{$m['Name']}</accountName>";
+                $body .= "<accountNumber>{$m['Account']}</accountNumber>";
+                $body .= "<sortCode>{$m['SortCode']}</sortCode>";
+                $body .= "<action>{$action}</action>";
+                //$body .= "<ddRefNo></ddRefNo>";
+                $body .= "<amount>{$m['Amount']}</amount>";
+                $body .= "<frequency>{$m['Freq']}</frequency>";
+                $body .= "<startDate>{$m['StartDate']}</startDate>";
+                //$body .= "<mandateType>{$m[]}</mandateType>";
+                //$body .= "<shortId>{$m[]}</shortId>";
+                //$body .= "<endDate>{$m[]}</endDate>";
+                $body .= "<paymentRef>{$m['Chances']}</paymentRef>";
+                $body .= "</mandate>";
+            }
+            $body .= "</mandates>";
+            $request = $this->request_start ($what).$body.$this->request_end();
+            $response = $this->handle ($what, $request);
+
+
+// TODO: Interpret response
+print_r ($response);
+$ok = false;
+
+
+            if ($ok) {
+                return true;
+            }
+            $this->error_log (121,'Failed to send new mandates using rm-api');
+            throw new \Exception ('Failed to send new mandates using rm-api');
+            return false;
+        }
+    }
+
     private function output_collections ( ) {
         $sql                = "INSERT INTO `".RSM_TABLE_COLLECTION."`\n";
         $sql               .= file_get_contents (__DIR__.'/select_collection.sql');
@@ -301,7 +317,7 @@ class PayApi {
             tee ("Output {$this->connection->affected_rows} collections\n");
         }
         catch (\mysqli_sql_exception $e) {
-            $this->error_log (121,'SQL insert failed: '.$e->getMessage());
+            $this->error_log (120,'SQL insert failed: '.$e->getMessage());
             throw new \Exception ('SQL error');
             return false;
         }
@@ -316,7 +332,7 @@ class PayApi {
             tee ("Output {$this->connection->affected_rows} mandates\n");
         }
         catch (\mysqli_sql_exception $e) {
-            $this->error_log (120,'SQL insert failed: '.$e->getMessage());
+            $this->error_log (119,'SQL insert failed: '.$e->getMessage());
             throw new \Exception ('SQL error');
             return false;
         }
@@ -354,7 +370,7 @@ class PayApi {
     private function setup ( ) {
         foreach ($this->constants as $c) {
             if (!defined($c)) {
-                $this->error_log (119,"$c not defined");
+                $this->error_log (118,"$c not defined");
                 throw new \Exception ('Configuration error');
                 return false;
             }
@@ -362,7 +378,7 @@ class PayApi {
         if (RSM_FILE_DEBOGON) {
             $this->bogon_file = RSM_FILE_DEBOGON;
             if (!is_readable(RSM_FILE_DEBOGON)) {
-                $this->error_log (118,"Unreadable file '{$this->bogon_file}'");
+                $this->error_log (117,"Unreadable file '{$this->bogon_file}'");
                 throw new \Exception ("Bogon file '{$this->bogon_file}' is not readable");
                 return false;
             }
@@ -374,7 +390,7 @@ class PayApi {
             $this->database = $db['db'];
         }
         catch (\mysqli_sql_exception $e) {
-            $this->error_log (117,'SQL select failed: '.$e->getMessage());
+            $this->error_log (116,'SQL select failed: '.$e->getMessage());
             throw new \Exception ('SQL database error');
             return false;
         }
@@ -399,7 +415,7 @@ class PayApi {
             $file = 'alter_collection.sql';
         }
         else {
-            $this->error_log (116,"Internal error");
+            $this->error_log (115,"Internal error");
             throw new \Exception ("Table '$table' not recognised");
             return false;
         }
@@ -424,7 +440,7 @@ class PayApi {
             echo "Inserted {$this->connection->affected_rows} rows into `$tablename`\n";
         }
         catch (\mysqli_sql_exception $e) {
-            $this->error_log (115,'SQL insert failed: '.$e->getMessage());
+            $this->error_log (114,'SQL insert failed: '.$e->getMessage());
             throw new \Exception ('SQL insert error');
             return false;
         }
