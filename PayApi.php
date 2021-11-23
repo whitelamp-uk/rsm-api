@@ -47,9 +47,12 @@ class PayApi {
         'payStatus'           => 'PayStatus',
         'paidAmount'          => 'PaidAmount',
     );
+    private $org;
 
-    public function __construct ($connection) {
+
+    public function __construct ($connection,$org=null) {
         $this->connection   = $connection;
+        $this->org          = $org;
         $this->setup ();
     }
 
@@ -244,7 +247,7 @@ class PayApi {
                 throw new \Exception ('API error (mandate): '.$response['status']);
                 return false;
             }
-            echo "Received {$response['noOfRecords']} mandates\n";
+            echo "Received {$response['noOfRecords']} mandates [ $start thru $end ]\n";
             if ($response['noOfRecords'] > 0) {
                 if ($response['noOfRecords'] == 1) { 
                     $data = array( $response['mandates']['mandate']);
@@ -263,7 +266,7 @@ class PayApi {
                 throw new \Exception ('API error (collection): '.$response['status']);
                 return false;
             }
-            echo "Received {$response['noOfRecords']} collections\n";
+            echo "Received {$response['noOfRecords']} collections [ $start thru $end ]\n";
             if ($response['noOfRecords'] > 0) {
                 if ($response['noOfRecords'] == 1) {
                     $data = array($response['collections']['collection']);
