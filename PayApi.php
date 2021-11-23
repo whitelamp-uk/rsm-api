@@ -20,6 +20,7 @@ class PayApi {
     public   $diagnostic;
     public   $error;
     public   $errorCode = 0;
+    private  $rsm_url = 'https://rsm5.rsmsecure.com/demo/ddcm/ddcmApi.php';
 
     // Translate from API mandate fields to table fields
     private $fieldsm = array (
@@ -74,6 +75,53 @@ class PayApi {
         }
     }
 
+    public function create_mandates ($csvfile)  {
+        if (($handle = fopen($csvfile, "r")) !== FALSE) {
+            $what = 'setMandates';
+            $body = "<mandates>";
+            fgets($handle); // skip header line
+            while (($data = fgetcsv($handle)) !== FALSE) {
+                $name  = $data[14].' '.$data[15].' '.$data[16];
+                $phone = $data[20] ? $data[20] : $data[21]; // Use mobile if possible
+                $action = (strtolower($data[1]) == 'c') ? 'N' : 'A';
+                $action = 'N';
+                $frequency = 1; // TODO sort this out
+                $start_date = '01/10/2020'; // TODO sort this out
+                $payment_ref = '213456789'; // TODO sort this out
+                $body .= "<mandate>";
+
+                $body .= "<tradingName>".RSM_TRADING_NAME."</tradingName>";
+                $body .= "<contactName>".RSM_CONTACT_NAME."</contactName>";
+                $body .= "<address1>".$data[22]."</address1>";
+                $body .= "<address2>".$data[23]."</address2>";
+                $body .= "<address3>".$data[24]."</address3>";
+                $body .= "<town>".$data[25]."</town>";
+                $body .= "<postcode>".$data[27]."</postcode>";
+                $body .= "<phone>".$phone."</phone>";
+                $body .= "<email>".$data[19]."</email>";
+                $body .= "<clientRef>".$data[0]."</clientRef>";
+                $body .= "<accountName>".$data[4]."</accountName>";
+                $body .= "<accountNumber>".$data[6]."</accountNumber>";
+                $body .= "<sortCode>".$data[5]."</sortCode>";
+                $body .= "<action>".$action."</action>";
+                //$body .= "<ddRefNo></ddRefNo>";
+                $body .= "<amount>".$data[7]."</amount>";
+                $body .= "<frequency>".$frequency."</frequency>";
+                $body .= "<startDate>".$start_date."</startDate>";
+                //$body .= "<mandateType>".$data[]."</mandateType>";
+                //$body .= "<shortId>".$data[]."</shortId>";
+                //$body .= "<endDate>".$data[]."</endDate>";
+                $body .= "<paymentRef>".$data[0]."</paymentRef>";
+
+                $body .= "</mandate>";
+            }
+            fclose($handle);
+            $body .= "</mandates>";
+            $request = $this->request_start ($what).$body.$this->request_end();
+            print_r($this->handle($what, $request));
+        }
+    }
+
     private function curl_post ($url,$post,$options=[]) {
     /*
         * Send a POST requst using cURL
@@ -95,7 +143,7 @@ class PayApi {
             CURLOPT_FORBID_REUSE => 1,
             CURLOPT_TIMEOUT => 45,
             CURLOPT_POSTFIELDS => http_build_query ($post)
-        );    
+        );
 
         $ch = curl_init ();
         curl_setopt_array ($ch,$options+$defaults);
@@ -106,22 +154,14 @@ class PayApi {
         }
         curl_close ($ch);
         return $result;
-    } 
+    }
 
     private function debogon ( ) {
         $this->execute (RSM_FILE_DEBOGON);
     }
 
-    private function do_collections ($start,$end,$limit) {
-        return $this->handle ('collectionReport',$start,$end,$limit);
-    }
-
     public function do_heartbeat ( ) {
-        return $this->handle ('heartbeat');
-    }
-
-    private function do_mandates ($start,$end,$limit) {
-        return $this->handle ('mandateReport',$start,$end,$limit);
+        return $this->handle ('heartbeat', $this->heartbeat_request ());
     }
 
     private function error_log ($code,$message) {
@@ -152,19 +192,25 @@ class PayApi {
         return '</ddcm>';
     }
 
-    private function handle ($what,$start,$end,$limit=0) {
+    private function get_collections ($start,$end,$limit) {
+        $what = 'collectionReport';
+        $request = $this->report_request ($what,$start,$end,$limit);
+        return $this->handle ($what, $request);
+    }
+
+    private function get_mandates ($start,$end,$limit) {
+        $what = 'mandateReport';
+        $request = $this->report_request ($what,$start,$end,$limit);
+        return $this->handle ($what, $request);
+    }
+
+    private function handle ($what,$request) {
         $header             = $this->header($what.'Request');
-        if ($what=='heartbeat') {
-            $request        = $this->heartbeat_request ();
-        }
-        else {
-            $request        = $this->report_request ($what,$start,$end,$limit);
-        }
         $sig                = $this->signature ($request);
         $footer             = $this->footer ();
         $postdata           = array ('xml'=>$header.$request.$sig.$footer);
-        //print_r ($postdata);
-        $response           = $this->curl_post (RSM_URL,$postdata);
+        print_r ($postdata);
+        $response           = $this->curl_post ($this->rsm_url,$postdata);
         //echo $response;
         $new                = simplexml_load_string ($response);
         $con                = json_encode ($new);
@@ -192,7 +238,7 @@ class PayApi {
         while ($then<$now) {
             $start = $then->format ('01/m/Y');
             $end   = $then->format ('t/m/Y');
-            $response = $this->do_mandates ($start,$end,$rowsm)['response'];
+            $response = $this->get_mandates ($start,$end,$rowsm)['response'];
             if ($response['status']!='SUCCESS') {
                 $this->error_log (123,'Mandate request was unsuccessful');
                 throw new \Exception ('API error (mandate): '.$response['status']);
@@ -211,7 +257,7 @@ class PayApi {
                     $this->fieldsm
                 );
             }
-            $response = $this->do_collections ($start,$end,$rowsc)['response'];
+            $response = $this->get_collections ($start,$end,$rowsc)['response'];
             if ($response['status']!='SUCCESS') {
                 $this->error_log (122,'Collection request was unsuccessful');
                 throw new \Exception ('API error (collection): '.$response['status']);
