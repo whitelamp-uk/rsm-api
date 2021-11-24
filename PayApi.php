@@ -254,7 +254,12 @@ class PayApi {
                     return false;
                 }
 
-// TODO: don't know what this bit does yet...
+/*
+TODO:
+Don't know what the next bit does yet...
+$m is now as associative array from tmp_supporter
+See blotto2/procedure_sql/import.supporter.sql
+*/
                 $action = (strtolower($m[1]) == 'c') ? 'N' : 'A';
                 $action = 'N';
 
