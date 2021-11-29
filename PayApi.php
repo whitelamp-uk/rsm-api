@@ -245,6 +245,8 @@ class PayApi {
     }
 
     public function insert_mandates ($mandates)  {
+// Make sure this bit does not work for now
+return true;
         if (($handle=fopen($file,'r'))!==false) {
             $what = 'setMandates';
             $body = "<mandates>";
