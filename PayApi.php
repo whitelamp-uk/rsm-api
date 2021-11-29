@@ -169,8 +169,8 @@ class PayApi {
         $response           = $this->curl_post ($this->rsm_url,$postdata);
         //echo $response;
         $new                = simplexml_load_string ($response);
-        $con                = json_encode ($new);
-        $response           = json_decode ($con,true);
+        $con                = json_encode ($new); //$new behaves like an object, but is actually a libxml resource 
+        $response           = json_decode ($con,true); // decode to associative array
         return $response;
     }
 
@@ -260,19 +260,18 @@ Don't know what the next bit does yet...
 $m is now as associative array from tmp_supporter
 See blotto2/procedure_sql/import.supporter.sql
 */
-                $action = (strtolower($m[1]) == 'c') ? 'N' : 'A';
-                $action = 'N';
+                $action = (strtolower($m['Type']) == 'c') ? 'N' : 'A'; // New, Amend, Delete
 
                 $body .= "<mandate>";
                 $body .= "<tradingName>".RSM_TRADING_NAME."</tradingName>";
                 $body .= "<contactName>".RSM_CONTACT_NAME."</contactName>";
-                $body .= "<address1></address1>";
-                $body .= "<address2></address2>";
-                $body .= "<address3></address3>";
-                $body .= "<town></town>";
-                $body .= "<postcode></postcode>";
-                $body .= "<phone></phone>";
-                $body .= "<email></email>";
+                // $body .= "<address1></address1>"; // required if address checking enabled
+                // $body .= "<address2></address2>";
+                // $body .= "<address3></address3>";
+                // $body .= "<town></town>";
+                // $body .= "<postcode></postcode>";
+                // $body .= "<phone></phone>";
+                // $body .= "<email></email>"; // required if confirmation email is mandatory
                 $body .= "<clientRef>{$m['ClientRef']}</clientRef>";
                 $body .= "<accountName>{$m['Name']}</accountName>";
                 $body .= "<accountNumber>{$m['Account']}</accountNumber>";
@@ -293,6 +292,25 @@ See blotto2/procedure_sql/import.supporter.sql
             $response = $this->handle ($what, $request);
 
 // TODO: Interpret response
+/*
+    [status] => FAIL
+    [summary] => Array
+        (
+            [totalSubmitted] => 1
+            [totalSuccessful] => 0
+            [totalFailed] => 1
+        )
+
+    [mandates] => Array
+        (
+            [mandate] => Array
+                (
+                    [0] => Array
+                        (
+                            [status] => FAIL
+NB that if only one mandate then there is no [0]; the next line is status
+*/
+
 print_r ($response);
 $ok = false;
 $e = 'Error';
@@ -301,7 +319,7 @@ $e = 'Error';
                 return true;
             }
             $this->error_log (121,$e);
-            throw new \Exception ('Failed to send new mandates using rm-api');
+            throw new \Exception ('Failed to send new mandates using rsm-api');
             return false;
         }
     }
