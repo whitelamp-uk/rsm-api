@@ -20,7 +20,7 @@ class PayApi {
     public   $diagnostic;
     public   $error;
     public   $errorCode = 0;
-    private  $rsm_url = RSM_URL; //'https://rsm5.rsmsecure.com/demo/ddcm/ddcmApi.php'; for dev
+
 
     // Translate from API mandate fields to table fields
     private $fieldsm = array (
@@ -166,7 +166,7 @@ class PayApi {
         $footer             = $this->footer ();
         $postdata           = array ('xml'=>$header.$request.$sig.$footer);
         //print_r ($postdata);
-        $response           = $this->curl_post ($this->rsm_url,$postdata);
+        $response           = $this->curl_post (RSM_URL,$postdata);
         //echo $response;
         $new                = simplexml_load_string ($response);
         $con                = json_encode ($new); //$new behaves like an object, but is actually a libxml resource 
