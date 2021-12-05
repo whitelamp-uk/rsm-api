@@ -246,6 +246,7 @@ class PayApi {
 
     public function insert_mandates ($mandates)  {
 // Make sure this bit does not work for now
+fwrite (STDERR,"insert_mandates() has chickened out\n");
 return true;
         if (($handle=fopen($file,'r'))!==false) {
             $what = 'setMandates';
