@@ -245,88 +245,93 @@ class PayApi {
     }
 
     public function insert_mandates ($mandates)  {
-// Make sure this bit does not work for now
-fwrite (STDERR,"insert_mandates() has chickened out\n");
-return true;
-        if (($handle=fopen($file,'r'))!==false) {
-            $what = 'setMandates';
-            $body = "<mandates>";
-            foreach ($mandates as $m) {
-                if (trim($m['Type'])!='C') {
-                    throw new \Exception ('Currently treating an FLC record not of type "C" (= create new customer) as an error');
-                    return false;
-                }
-
-/*
-TODO:
-Don't know what the next bit does yet...
-$m is now as associative array from tmp_supporter
-See blotto2/procedure_sql/import.supporter.sql
-*/
-                $action = (strtolower($m['Type']) == 'c') ? 'N' : 'A'; // New, Amend, Delete
-
-                $body .= "<mandate>";
-                $body .= "<tradingName>".RSM_TRADING_NAME."</tradingName>";
-                $body .= "<contactName>".RSM_CONTACT_NAME."</contactName>";
-                // $body .= "<address1></address1>"; // required if address checking enabled
-                // $body .= "<address2></address2>";
-                // $body .= "<address3></address3>";
-                // $body .= "<town></town>";
-                // $body .= "<postcode></postcode>";
-                // $body .= "<phone></phone>";
-                // $body .= "<email></email>"; // required if confirmation email is mandatory
-                $body .= "<clientRef>{$m['ClientRef']}</clientRef>";
-                $body .= "<accountName>{$m['Name']}</accountName>";
-                $body .= "<accountNumber>{$m['Account']}</accountNumber>";
-                $body .= "<sortCode>{$m['SortCode']}</sortCode>";
-                $body .= "<action>{$action}</action>";
-                //$body .= "<ddRefNo></ddRefNo>";
-                $body .= "<amount>{$m['Amount']}</amount>";
-                $body .= "<frequency>{$m['Freq']}</frequency>";
-                $body .= "<startDate>".collection_startdate(date('Y-m-d'),$m['PayDay'])."</startDate>";
-                //$body .= "<mandateType>{$m[]}</mandateType>";
-                //$body .= "<shortId>{$m[]}</shortId>";
-                //$body .= "<endDate>{$m[]}</endDate>";
-                $body .= "<paymentRef>{$m['Chances']}</paymentRef>";
-                $body .= "</mandate>";
+        // For now, we create the request and dump to the big log
+        $what = 'setMandates';
+        $body = "<mandates>";
+        foreach ($mandates as $m) {
+            if (trim($m['Type'])!='C') {
+                throw new \Exception ('Currently treating an FLC record not of type "C" (= create new customer) as an error');
+                return false;
             }
-            $body .= "</mandates>";
-            $request = $this->request_start ($what).$body.$this->request_end();
-            $response = $this->handle ($what, $request);
 
-// TODO: Interpret response
-/*
-    [status] => FAIL
-    [summary] => Array
-        (
-            [totalSubmitted] => 1
-            [totalSuccessful] => 0
-            [totalFailed] => 1
-        )
-
-    [mandates] => Array
-        (
-            [mandate] => Array
-                (
-                    [0] => Array
-                        (
-                            [status] => FAIL
-NB that if only one mandate then there is no [0]; the next line is status
-*/
-
-print_r ($response);
-$ok = false;
-$e = 'Error';
-
-            if ($ok) {
-                return true;
-            }
-            $this->error_log (121,$e);
-            throw new \Exception ('Failed to send new mandates using rsm-api');
-            return false;
+            $action = (strtolower($m['Type']) == 'c') ? 'N' : 'A'; // New, Amend, Delete
+            //some optional elements commented out
+            $body .= "<mandate>";
+            //$body .= "<tradingName>".RSM_TRADING_NAME."</tradingName>";
+            //$body .= "<contactName>".RSM_CONTACT_NAME."</contactName>";
+            // $body .= "<address1></address1>"; // required if address checking enabled
+            // $body .= "<address2></address2>";
+            // $body .= "<address3></address3>";
+            // $body .= "<town></town>";
+            // $body .= "<postcode></postcode>";
+            // $body .= "<phone></phone>";
+            // $body .= "<email></email>"; // required if confirmation email is mandatory
+            $body .= "<clientRef>{$m['ClientRef']}</clientRef>";
+            $body .= "<accountName>{$m['Name']}</accountName>";
+            $body .= "<accountNumber>{$m['Account']}</accountNumber>";
+            $body .= "<sortCode>{$m['SortCode']}</sortCode>";
+            $body .= "<action>{$action}</action>";
+            //$body .= "<ddRefNo></ddRefNo>";
+            $body .= "<amount>{$m['Amount']}</amount>";
+            $body .= "<frequency>{$m['Freq']}</frequency>";
+            $body .= "<startDate>".collection_startdate(date('Y-m-d'),$m['PayDay'])."</startDate>";
+            //$body .= "<mandateType>{$m[]}</mandateType>";
+            //$body .= "<shortId>{$m[]}</shortId>";
+            //$body .= "<endDate>{$m[]}</endDate>";
+            $body .= "<paymentRef>{$m['Chances']}</paymentRef>";
+            $body .= "</mandate>";
         }
-    }
+        $body .= "</mandates>";
+        $request = $this->request_start ($what).$body.$this->request_end();
+        print_r($request); // send to logfile
+        return true; // TODO remove this in due course
 
+        $response = $this->handle ($what, $request);
+
+        // TODO: Interpret and mail response
+        /*
+            [status] => FAIL
+            [summary] => Array
+                (
+                    [totalSubmitted] => 1
+                    [totalSuccessful] => 0
+                    [totalFailed] => 1
+                )
+
+            [mandates] => Array
+                (
+                    [mandate] => Array
+                        (
+                            [0] => Array
+                                (
+                                    [status] => FAIL
+        NB that if only one mandate then there is no [0]; the next line is status
+
+
+
+        */
+
+        print_r ($response); // dump to logfile
+
+        $good = $response['summary']['totalSuccessful'];
+        $bad  = $response['summary']['totalFailed'];
+
+        $subj = "RSM insert mandates $good good $bad bad";
+        $body = '';
+        $mandates_array = $response['mandates']['mandate'];
+        if (isset($mandates_array['status'])) { // special case when only one
+            $mandates_array[0] = $mandates_array;
+        }
+        foreach ($mandates_array as $mandate) {
+            // client ref, status, error code(s) (if any) per line
+        }
+        // send
+
+        // whatever happens we continue the build process; email alerts admins to problems
+        // and we'll try again on next build.
+        return true;
+    }
+    
     private function output_collections ( ) {
         $sql                = "INSERT INTO `".RSM_TABLE_COLLECTION."`\n";
         $sql               .= file_get_contents (__DIR__.'/select_collection.sql');
