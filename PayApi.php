@@ -255,10 +255,10 @@ class PayApi {
             }
 
             $action = (strtolower($m['Type']) == 'c') ? 'N' : 'A'; // New, Amend, Delete
-            //some optional elements commented out
+            //some optional elements commented out - but left here for reference!
             $body .= "<mandate>";
-            //$body .= "<tradingName>".RSM_TRADING_NAME."</tradingName>";
-            //$body .= "<contactName>".RSM_CONTACT_NAME."</contactName>";
+            // $body .= "<tradingName>".RSM_TRADING_NAME."</tradingName>"; // e.g. if account holder is business
+            // $body .= "<contactName>".RSM_CONTACT_NAME."</contactName>"; // again, business, or account in multiple names
             // $body .= "<address1></address1>"; // required if address checking enabled
             // $body .= "<address2></address2>";
             // $body .= "<address3></address3>";
@@ -288,8 +288,8 @@ class PayApi {
 
         $response = $this->handle ($what, $request);
 
-        // TODO: Interpret and mail response
         /*
+         ** this is here temporarily
             [status] => FAIL
             [summary] => Array
                 (
@@ -306,9 +306,6 @@ class PayApi {
                                 (
                                     [status] => FAIL
         NB that if only one mandate then there is no [0]; the next line is status
-
-
-
         */
 
         print_r ($response); // dump to logfile
@@ -323,15 +320,25 @@ class PayApi {
             $mandates_array[0] = $mandates_array;
         }
         foreach ($mandates_array as $mandate) {
-            // client ref, status, error code(s) (if any) per line
+            // clientRef, status, error code(s) (if any) per line
+            $body .= $mandate['clientRef'].' '.$mandate['status'];
+            if (isset($mandate['errors'])) {
+                // $body .= $mandate['errors']['error']['code'].' '.$mandate['errors']['error']['detail'];
+                // for now until we know more about the format of errors we just dump it.
+                // because if there's more than one error it is probably an array - similar to 
+                // mandates_array above
+                $body .= "\n".print_r($mandate['errors'], true);
+            }
+            $body .= "\n";
         }
         // send
+        mail(BLOTTO_ADMIN_EMAIL, $subj, $body);
 
         // whatever happens we continue the build process; email alerts admins to problems
         // and we'll try again on next build.
         return true;
     }
-    
+
     private function output_collections ( ) {
         $sql                = "INSERT INTO `".RSM_TABLE_COLLECTION."`\n";
         $sql               .= file_get_contents (__DIR__.'/select_collection.sql');
