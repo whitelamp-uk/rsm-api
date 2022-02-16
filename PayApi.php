@@ -284,7 +284,8 @@ class PayApi {
         $body .= "</mandates>";
         $request = $this->request_start ($what).$body.$this->request_end();
         print_r($request); // send to logfile
-        return true; // TODO remove this in due course
+
+//        return true; // TODO remove this in due course
 
         $response = $this->handle ($what, $request);
 
