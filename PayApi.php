@@ -333,7 +333,7 @@ class PayApi {
             $body .= "\n";
         }
         // send
-        mail(BLOTTO_ADMIN_EMAIL, $subj, $body);
+        mail(BLOTTO_EMAIL_WARN_TO, $subj, $body);
 
         // whatever happens we continue the build process; email alerts admins to problems
         // and we'll try again on next build.
