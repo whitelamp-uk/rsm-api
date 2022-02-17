@@ -245,6 +245,10 @@ class PayApi {
     }
 
     public function insert_mandates ($mandates)  {
+        if (!count($mandates)) {
+            fwrite (STDERR,"No mandates to insert\n");
+            return true;
+        }
         // For now, we create the request and dump to the big log
         $what = 'setMandates';
         $body = "<mandates>";
@@ -311,9 +315,14 @@ class PayApi {
 
         print_r ($response); // dump to logfile
 
-        $good = $response['summary']['totalSuccessful'];
-        $bad  = $response['summary']['totalFailed'];
-
+        if (is_array($response) && array_key_exists('summary',$response)) {
+            $good = $response['summary']['totalSuccessful'];
+            $bad  = $response['summary']['totalFailed'];
+        }
+        else {
+            $good = 0;
+            $bad = count ($mandates);
+        }
         $subj = "RSM insert mandates $good good $bad bad";
         $body = '';
         $mandates_array = $response['mandates']['mandate'];
