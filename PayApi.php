@@ -262,7 +262,7 @@ class PayApi {
             //some optional elements commented out - but left here for reference!
             $body .= "<mandate>";
             // $body .= "<tradingName>".RSM_TRADING_NAME."</tradingName>"; // e.g. if account holder is business
-            // $body .= "<contactName>".RSM_CONTACT_NAME."</contactName>"; // again, business, or account in multiple names
+            $body .= "<contactName>{$m['Name']}</contactName>"; // required if confirmation emails are enabled (whether or not mandatory)
             // $body .= "<address1></address1>"; // required if address checking enabled
             // $body .= "<address2></address2>";
             // $body .= "<address3></address3>";
@@ -278,7 +278,7 @@ class PayApi {
             //$body .= "<ddRefNo></ddRefNo>";
             $body .= "<amount>{$m['Amount']}</amount>";
             $body .= "<frequency>{$m['Freq']}</frequency>";
-            $body .= "<startDate>".collection_startdate(date('Y-m-d'),$m['PayDay'])."</startDate>";
+            $body .= "<startDate>".date('d/m/Y',collection_startdate(date('Y-m-d'),$m['PayDay']))."</startDate>";
             //$body .= "<mandateType>{$m[]}</mandateType>";
             //$body .= "<shortId>{$m[]}</shortId>";
             //$body .= "<endDate>{$m[]}</endDate>";
