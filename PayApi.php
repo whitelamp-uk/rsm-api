@@ -324,6 +324,7 @@ class PayApi {
             $bad = count ($mandates);
         }
         $subj = "RSM insert mandates for ".strtolower(BLOTTO_ORG_USER).", $good good, $bad bad";
+        $body = "";
         $mandates_array = $response['mandates']['mandate'];
         if (isset($mandates_array['status'])) { // special case when only one
             $mandates_array[0] = $mandates_array;
