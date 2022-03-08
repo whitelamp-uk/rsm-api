@@ -249,7 +249,7 @@ class PayApi {
             fwrite (STDERR,"No mandates to insert\n");
             return true;
         }
-        // For now, we create the request and dump to the big log
+        $test = [];
         $what = 'setMandates';
         $body = "<mandates>";
         foreach ($mandates as $m) {
@@ -257,6 +257,8 @@ class PayApi {
                 throw new \Exception ('Currently treating an FLC record not of type "C" (= create new customer) as an error');
                 return false;
             }
+
+$test[$m['ClientRef']] = $m['SortCode'];
 
             $action = (strtolower($m['Type']) == 'c') ? 'N' : 'A'; // New, Amend, Delete
             //some optional elements commented out - but left here for reference!
@@ -313,6 +315,8 @@ class PayApi {
         NB that if only one mandate then there is no [0]; the next line is status
         */
 
+        $subj = "RSM insert mandates for ".strtoupper(BLOTTO_ORG_USER).", $good good, $bad bad";
+        $body = "";
         $mandates_array = [];
         if (is_array($response)) {
             $signature = $response['signature'];
@@ -326,6 +330,19 @@ class PayApi {
                 if (isset($mandates_array['status'])) { // special case when only one
                     $mandates_array[0] = $mandates_array;
                 }
+                foreach ($mandates_array as $mandate) {
+                    // clientRef, status, error code(s) (if any) per line
+                    $body .= $mandate['clientRef'].' '.$mandate['status'];
+                    if (isset($mandate['errors'])) {
+                        $body .= "\ntest = ".$test[$mandate['clientRef']]."\n";
+                        // $body .= $mandate['errors']['error']['code'].' '.$mandate['errors']['error']['detail'];
+                        // for now until we know more about the format of errors we just dump it.
+                        // because if there's more than one error it is probably an array - similar to 
+                        // mandates_array above
+                        $body .= print_r($mandate['errors'], true);
+                    }
+                    $body .= "\n";
+                }
             }
             else {
                 $good = 0;
@@ -335,20 +352,6 @@ class PayApi {
         else {
             $good = 0;
             $bad = count ($mandates);
-        }
-        $subj = "RSM insert mandates for ".strtoupper(BLOTTO_ORG_USER).", $good good, $bad bad";
-        $body = "";
-        foreach ($mandates_array as $mandate) {
-            // clientRef, status, error code(s) (if any) per line
-            $body .= $mandate['clientRef'].' '.$mandate['status'];
-            if (isset($mandate['errors'])) {
-                // $body .= $mandate['errors']['error']['code'].' '.$mandate['errors']['error']['detail'];
-                // for now until we know more about the format of errors we just dump it.
-                // because if there's more than one error it is probably an array - similar to 
-                // mandates_array above
-                $body .= "\n".print_r($mandate['errors'], true);
-            }
-            $body .= "\n";
         }
         // send
         mail(BLOTTO_EMAIL_WARN_TO, $subj, $body);
