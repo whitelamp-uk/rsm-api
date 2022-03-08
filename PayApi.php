@@ -259,7 +259,7 @@ class PayApi {
                 return false;
             }
 
-$test[$m['ClientRef']] = date('d/m/Y',collection_startdate(date('Y-m-d'),$m['PayDay']));
+$test[$m['ClientRef']] = 'collection_startdate('.date('Y-m-d').','.$m['PayDay'].')='.collection_startdate(date('Y-m-d'),$m['PayDay']);
 
             $action = (strtolower($m['Type']) == 'c') ? 'N' : 'A'; // New, Amend, Delete
             //some optional elements commented out - but left here for reference!
