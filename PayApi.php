@@ -250,6 +250,7 @@ class PayApi {
             return true;
         }
         $test = [];
+        $sortcode = str_replace ('-','',$m['SortCode']);
         $what = 'setMandates';
         $body = "<mandates>";
         foreach ($mandates as $m) {
@@ -258,7 +259,7 @@ class PayApi {
                 return false;
             }
 
-$test[$m['ClientRef']] = $m['SortCode'];
+$test[$m['ClientRef']] = date('d/m/Y',collection_startdate(date('Y-m-d'),$m['PayDay']));
 
             $action = (strtolower($m['Type']) == 'c') ? 'N' : 'A'; // New, Amend, Delete
             //some optional elements commented out - but left here for reference!
@@ -275,7 +276,7 @@ $test[$m['ClientRef']] = $m['SortCode'];
             $body .= "<clientRef>{$m['ClientRef']}</clientRef>";
             $body .= "<accountName>{$m['Name']}</accountName>";
             $body .= "<accountNumber>{$m['Account']}</accountNumber>";
-            $body .= "<sortCode>{$m['SortCode']}</sortCode>";
+            $body .= "<sortCode>$sortcode</sortCode>";
             $body .= "<action>{$action}</action>";
             //$body .= "<ddRefNo></ddRefNo>";
             $body .= "<amount>{$m['Amount']}</amount>";
