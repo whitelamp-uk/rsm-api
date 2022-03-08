@@ -343,7 +343,8 @@ class PayApi {
             }
         }
         else {
-            $body .= "\$mandates_array is not an array!\n";
+            $body .= "\$mandates_array is not an array!\n\$response['mandates'] = ";
+            $body .= print_r ($response['mandates'],true);
         }
         // send
         mail (BLOTTO_EMAIL_WARN_TO,$subj,$body);
