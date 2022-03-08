@@ -249,6 +249,7 @@ class PayApi {
             fwrite (STDERR,"No mandates to insert\n");
             return true;
         }
+        // For now, we create the request and dump to the big log
         $what = 'setMandates';
         $body = "<mandates>";
         foreach ($mandates as $m) {
@@ -312,11 +313,24 @@ class PayApi {
         NB that if only one mandate then there is no [0]; the next line is status
         */
 
-        print_r ($response); // dump to logfile
-
-        if (is_array($response) && array_key_exists('summary',$response)) {
-            $good = $response['summary']['totalSuccessful'];
-            $bad  = $response['summary']['totalFailed'];
+        $mandates_array = [];
+        if (is_array($response)) {
+            $signature = $response['signature'];
+            echo $signature."\n"; // dump to logfile
+            $response = $response['response'];
+            print_r ($response); // dump to logfile
+            if (is_array($response) && array_key_exists('summary',$response)) {
+                $good = $response['summary']['totalSuccessful'];
+                $bad  = $response['summary']['totalFailed'];
+                $mandates_array = $response['mandates']['mandate'];
+                if (isset($mandates_array['status'])) { // special case when only one
+                    $mandates_array[0] = $mandates_array;
+                }
+            }
+            else {
+                $good = 0;
+                $bad = count ($mandates);
+            }
         }
         else {
             $good = 0;
@@ -324,30 +338,21 @@ class PayApi {
         }
         $subj = "RSM insert mandates for ".strtoupper(BLOTTO_ORG_USER).", $good good, $bad bad";
         $body = "";
-        $mandates_array = $response['mandates']['mandate'];
-        if (is_array($mandates_array)) {
-            if (isset($mandates_array['status'])) { // special case when only one
-                $mandates_array[0] = $mandates_array;
+        foreach ($mandates_array as $mandate) {
+            // clientRef, status, error code(s) (if any) per line
+            $body .= $mandate['clientRef'].' '.$mandate['status'];
+            if (isset($mandate['errors'])) {
+                // $body .= $mandate['errors']['error']['code'].' '.$mandate['errors']['error']['detail'];
+                // for now until we know more about the format of errors we just dump it.
+                // because if there's more than one error it is probably an array - similar to 
+                // mandates_array above
+                $body .= "\n".print_r($mandate['errors'], true);
             }
-            foreach ($mandates_array as $mandate) {
-                // clientRef, status, error code(s) (if any) per line
-                $body .= $mandate['clientRef'].' '.$mandate['status'];
-                if (isset($mandate['errors'])) {
-                    // $body .= $mandate['errors']['error']['code'].' '.$mandate['errors']['error']['detail'];
-                    // for now until we know more about the format of errors we just dump it.
-                    // because if there's more than one error it is probably an array - similar to 
-                    // mandates_array above
-                    $body .= "\n".print_r($mandate['errors'], true);
-                }
-                $body .= "\n";
-            }
-        }
-        else {
-            $body .= "\$mandates_array is not an array!\n\$response = ";
-            $body .= print_r ($response,true);
+            $body .= "\n";
         }
         // send
-        mail (BLOTTO_EMAIL_WARN_TO,$subj,$body);
+        mail(BLOTTO_EMAIL_WARN_TO, $subj, $body);
+
         // whatever happens we continue the build process; email alerts admins to problems
         // and we'll try again on next build.
         return true;
