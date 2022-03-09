@@ -282,7 +282,8 @@ $test[$m['ClientRef']] = 'collection_startdate('.date('Y-m-d').','.$m['PayDay'].
             $body .= "<amount>{$m['Amount']}</amount>";
             $body .= "<frequency>{$m['Freq']}</frequency>";
             // collection_startdate returns Y-m-d. This is ugly.  But so is subtr().  And strototime is worse
-            $dt_csd = DateTime::createFromFormat('Y-m-d', $csd);
+            // really the ugly bit it RSM using stupid time formats
+            $dt_csd = \DateTime::createFromFormat ('Y-m-d',$csd);
             $body .= "<startDate>".$dt_csd->format('d/m/Y')."</startDate>";
             //$body .= "<mandateType>{$m[]}</mandateType>";
             //$body .= "<shortId>{$m[]}</shortId>";
