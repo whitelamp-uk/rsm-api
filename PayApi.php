@@ -250,7 +250,6 @@ class PayApi {
             return true;
         }
         $test = [];
-        $sortcode = str_replace ('-','',$m['SortCode']);
         $what = 'setMandates';
         $body = "<mandates>";
         foreach ($mandates as $m) {
@@ -258,8 +257,9 @@ class PayApi {
                 throw new \Exception ('Currently treating an FLC record not of type "C" (= create new customer) as an error');
                 return false;
             }
-
-$test[$m['ClientRef']] = 'collection_startdate('.date('Y-m-d').','.$m['PayDay'].')='.collection_startdate(date('Y-m-d'),$m['PayDay']);
+            $sortcode = str_replace ('-','',$m['SortCode']);
+            $csd = collection_startdate(date('Y-m-d'),$m['PayDay']);
+$test[$m['ClientRef']] = 'collection_startdate('.date('Y-m-d').','.$m['PayDay'].')='.$csd;
 
             $action = (strtolower($m['Type']) == 'c') ? 'N' : 'A'; // New, Amend, Delete
             //some optional elements commented out - but left here for reference!
@@ -281,7 +281,9 @@ $test[$m['ClientRef']] = 'collection_startdate('.date('Y-m-d').','.$m['PayDay'].
             //$body .= "<ddRefNo></ddRefNo>";
             $body .= "<amount>{$m['Amount']}</amount>";
             $body .= "<frequency>{$m['Freq']}</frequency>";
-            $body .= "<startDate>".date('d/m/Y',collection_startdate(date('Y-m-d'),$m['PayDay']))."</startDate>";
+            // collection_startdate returns Y-m-d. This is ugly.  But so is subtr().  And strototime is worse
+            $dt_csd = DateTime::createFromFormat('Y-m-d', $csd);
+            $body .= "<startDate>".$dt_csd->format('d/m/Y')."</startDate>";
             //$body .= "<mandateType>{$m[]}</mandateType>";
             //$body .= "<shortId>{$m[]}</shortId>";
             //$body .= "<endDate>{$m[]}</endDate>";
@@ -316,7 +318,6 @@ $test[$m['ClientRef']] = 'collection_startdate('.date('Y-m-d').','.$m['PayDay'].
         NB that if only one mandate then there is no [0]; the next line is status
         */
 
-        $subj = "RSM insert mandates for ".strtoupper(BLOTTO_ORG_USER).", $good good, $bad bad";
         $body = "";
         $mandates_array = [];
         if (is_array($response)) {
@@ -336,10 +337,12 @@ $test[$m['ClientRef']] = 'collection_startdate('.date('Y-m-d').','.$m['PayDay'].
                     $body .= $mandate['clientRef'].' '.$mandate['status'];
                     if (isset($mandate['errors'])) {
                         $body .= "\ntest = ".$test[$mandate['clientRef']]."\n";
+
+                        // if more than one error it is an array, if not then second form
+                        // $body .= $mandate['errors']['error'][0]['code'].' '.$mandate['errors']['error'][0]['detail'];
                         // $body .= $mandate['errors']['error']['code'].' '.$mandate['errors']['error']['detail'];
-                        // for now until we know more about the format of errors we just dump it.
-                        // because if there's more than one error it is probably an array - similar to 
-                        // mandates_array above
+
+
                         $body .= print_r($mandate['errors'], true);
                     }
                     $body .= "\n";
@@ -355,6 +358,7 @@ $test[$m['ClientRef']] = 'collection_startdate('.date('Y-m-d').','.$m['PayDay'].
             $bad = count ($mandates);
         }
         // send
+        $subj = "RSM insert mandates for ".strtoupper(BLOTTO_ORG_USER).", $good good, $bad bad";
         mail(BLOTTO_EMAIL_WARN_TO, $subj, $body);
 
         // whatever happens we continue the build process; email alerts admins to problems
