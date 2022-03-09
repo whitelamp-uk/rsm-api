@@ -249,7 +249,6 @@ class PayApi {
             fwrite (STDERR,"No mandates to insert\n");
             return true;
         }
-        $test = [];
         $what = 'setMandates';
         $body = "<mandates>";
         foreach ($mandates as $m) {
@@ -259,7 +258,8 @@ class PayApi {
             }
             $sortcode = str_replace ('-','',$m['SortCode']);
             $csd = collection_startdate(date('Y-m-d'),$m['PayDay']);
-$test[$m['ClientRef']] = 'collection_startdate('.date('Y-m-d').','.$m['PayDay'].')='.$csd;
+            $dt_csd = \DateTime::createFromFormat ('Y-m-d',$csd); // is there a better way of converting?
+            $rsm_startdate = $dt_csd->format('d/m/Y');
 
             $action = (strtolower($m['Type']) == 'c') ? 'N' : 'A'; // New, Amend, Delete
             //some optional elements commented out - but left here for reference!
@@ -281,10 +281,7 @@ $test[$m['ClientRef']] = 'collection_startdate('.date('Y-m-d').','.$m['PayDay'].
             //$body .= "<ddRefNo></ddRefNo>";
             $body .= "<amount>{$m['Amount']}</amount>";
             $body .= "<frequency>{$m['Freq']}</frequency>";
-            // collection_startdate returns Y-m-d. This is ugly.  But so is subtr().  And strototime is worse
-            // really the ugly bit it RSM using stupid time formats
-            $dt_csd = \DateTime::createFromFormat ('Y-m-d',$csd);
-            $body .= "<startDate>".$dt_csd->format('d/m/Y')."</startDate>";
+            $body .= "<startDate>".$rsm_startdate."</startDate>";
             //$body .= "<mandateType>{$m[]}</mandateType>";
             //$body .= "<shortId>{$m[]}</shortId>";
             //$body .= "<endDate>{$m[]}</endDate>";
@@ -295,29 +292,7 @@ $test[$m['ClientRef']] = 'collection_startdate('.date('Y-m-d').','.$m['PayDay'].
         $request = $this->request_start ($what).$body.$this->request_end();
         print_r($request); // send to logfile
 
-//        return true; // TODO remove this in due course
-
         $response = $this->handle ($what, $request);
-
-        /*
-         ** this is here temporarily
-            [status] => FAIL
-            [summary] => Array
-                (
-                    [totalSubmitted] => 1
-                    [totalSuccessful] => 0
-                    [totalFailed] => 1
-                )
-
-            [mandates] => Array
-                (
-                    [mandate] => Array
-                        (
-                            [0] => Array
-                                (
-                                    [status] => FAIL
-        NB that if only one mandate then there is no [0]; the next line is status
-        */
 
         $body = "";
         $mandates_array = [];
@@ -335,18 +310,16 @@ $test[$m['ClientRef']] = 'collection_startdate('.date('Y-m-d').','.$m['PayDay'].
                 }
                 foreach ($mandates_array as $mandate) {
                     // clientRef, status, error code(s) (if any) per line
-                    $body .= $mandate['clientRef'].' '.$mandate['status'];
+                    $body .= $mandate['clientRef'].' '.$mandate['status']."\n";
                     if (isset($mandate['errors'])) {
-                        $body .= "\ntest = ".$test[$mandate['clientRef']]."\n";
-
-                        // if more than one error it is an array, if not then second form
-                        // $body .= $mandate['errors']['error'][0]['code'].' '.$mandate['errors']['error'][0]['detail'];
-                        // $body .= $mandate['errors']['error']['code'].' '.$mandate['errors']['error']['detail'];
-
-
-                        $body .= print_r($mandate['errors'], true);
+                        $error_array = $mandate['errors']['error'];
+                        if (isset($error_array['code'])) {
+                            $error_array[0] = $error_array;  // same as mandates above
+                        }
+                        foreach ($$error_array as $errdetail) {
+                            $body .= $errdetail['code'].' '.$errdetail['detail']."\n";
+                        }
                     }
-                    $body .= "\n";
                 }
             }
             else {
