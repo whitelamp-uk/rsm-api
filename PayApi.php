@@ -316,7 +316,7 @@ class PayApi {
                         if (isset($error_array['code'])) {
                             $error_array[0] = $error_array;  // same as mandates above
                         }
-                        foreach ($$error_array as $errdetail) {
+                        foreach ($error_array as $errdetail) {
                             $body .= $errdetail['code'].' '.$errdetail['detail']."\n";
                         }
                     }
