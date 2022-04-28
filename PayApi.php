@@ -257,7 +257,7 @@ class PayApi {
                 return false;
             }
             $sortcode = str_replace ('-','',$m['SortCode']);
-            $csd = collection_startdate(date('Y-m-d'),$m['PayDay']);
+            $csd = collection_startdate(gmdate('Y-m-d'),$m['PayDay']);
             $dt_csd = \DateTime::createFromFormat ('Y-m-d',$csd); // is there a better way of converting?
             $rsm_startdate = $dt_csd->format('d/m/Y');
 
