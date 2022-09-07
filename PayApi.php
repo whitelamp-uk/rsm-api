@@ -20,6 +20,25 @@ class PayApi {
     public   $diagnostic;
     public   $error;
     public   $errorCode = 0;
+    public   $frequency = [
+        // FLC --> RSM
+        '1'               => 'Monthly',
+        'M'               => 'Monthly',
+        'Monthly'         => 'Monthly',
+        'OneMonthly'      => 'Monthly',
+        '3'               => 'Quarterly',
+        'Q'               => 'Quarterly',
+        'Quarterly'       => 'Quarterly',
+        'ThreeMonthly'    => 'Quarterly',
+        '6'               => '6 Monthly',
+        'S'               => '6 Monthly',
+        '6 Monthly'       => '6 Monthly',
+        'SixMonthly'      => '6 Monthly',
+        '12'              => 'Annually',
+        'Y'               => 'Annually',
+        'Annually'        => 'Annually',
+        'TwelveMonthly'   => 'Annually'
+    ];
 
 
     // Translate from API mandate fields to table fields
@@ -253,13 +272,17 @@ class PayApi {
         $body = "<mandates>";
         foreach ($mandates as $m) {
             if (trim($m['Type'])!='C') {
-                throw new \Exception ('Currently treating an FLC record not of type "C" (= create new customer) as an error');
+                throw new \Exception ("Currently treating an FLC record not of type 'C' (= create new customer) as an error");
+                return false;
+            }
+            if (!array_key_exists($m['Freq'],$this->frequency)) {
+                throw new \Exception ("Payment frequency '{$m['Freq']}' is not FLC standards compliant");
                 return false;
             }
             $sortcode = str_replace ('-','',$m['SortCode']);
-            $csd = collection_startdate(gmdate('Y-m-d'),$m['PayDay']);
+            $csd = collection_startdate (gmdate('Y-m-d'),$m['PayDay']);
             $dt_csd = \DateTime::createFromFormat ('Y-m-d',$csd); // is there a better way of converting?
-            $rsm_startdate = $dt_csd->format('d/m/Y');
+            $rsm_startdate = $dt_csd->format ('d/m/Y');
 
             $action = (strtolower($m['Type']) == 'c') ? 'N' : 'A'; // New, Amend, Delete
             //some optional elements commented out - but left here for reference!
@@ -280,7 +303,7 @@ class PayApi {
             $body .= "<action>{$action}</action>";
             //$body .= "<ddRefNo></ddRefNo>";
             $body .= "<amount>{$m['Amount']}</amount>";
-            $body .= "<frequency>{$m['Freq']}</frequency>";
+            $body .= "<frequency>{$this->frequency[$m['Freq']]}</frequency>";
             $body .= "<startDate>".$rsm_startdate."</startDate>";
             //$body .= "<mandateType>{$m[]}</mandateType>";
             //$body .= "<shortId>{$m[]}</shortId>";
