@@ -259,6 +259,7 @@ class PayApi {
             $this->debogon ();
         }
         $this->bogon_check ();
+        $this->iscurrent_set ();
         $this->output_mandates ();
         $this->output_collections ();
     }
@@ -361,6 +362,11 @@ class PayApi {
         // whatever happens we continue the build process; email alerts admins to problems
         // and we'll try again on next build.
         return true;
+    }
+
+    private function iscurrent_set ( )  {
+        $this->execute (__DIR__.'/iscurrent.sql');
+        $this->bogon_check ();
     }
 
     private function output_collections ( ) {
