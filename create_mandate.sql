@@ -23,6 +23,7 @@ CREATE TABLE `rsm_mandate` (
   `FailReason` varchar(255) DEFAULT NULL,
   `Updated` varchar(255) CHARACTER SET ascii DEFAULT NULL,
   `ChancesCsv` varchar(255) CHARACTER SET ascii NOT NULL,
+  `IsCurrent` tinyint(1) unsigned NOT NULL DEFAULT 0,
   KEY `DDRefOrig` (`DDRefOrig`),
   KEY `ClientRef` (`ClientRef`),
   KEY `Freq` (`Freq`),
