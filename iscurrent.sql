@@ -6,8 +6,8 @@ CREATE PROCEDURE `bogonCheckIsCurrent` (
 BEGIN
   INSERT INTO `rsm_bogon`
   SELECT
-    CONCAT (`quantity_ddrefs`,' mandates with ',`quantity_current`,' current rows (where IsCurrent=1)')
-   ,`ddrefs`
+    'setIsCurrent() is misbehaving'
+   ,CONCAT (`quantity_ddrefs`,' mandates with ',`quantity_current`,' current rows (where IsCurrent=1): ',`ddrefs`)
   FROM (
     SELECT
       `t`.`qty` AS `quantity_current`
