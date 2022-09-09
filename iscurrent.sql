@@ -4,6 +4,8 @@ DROP PROCEDURE IF EXISTS `bogonCheckIsCurrent`$$
 CREATE PROCEDURE `bogonCheckIsCurrent` (
 )
 BEGIN
+  -- This routine is not in create_bogon.sql because it checks results
+  -- from setIsCurrent() rather than checking RSM source data
   INSERT INTO `rsm_bogon`
   SELECT
     'setIsCurrent() is misbehaving'
