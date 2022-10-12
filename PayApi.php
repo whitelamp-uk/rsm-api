@@ -330,7 +330,7 @@ class PayApi {
                 $bad  = $response['summary']['totalFailed'];
                 $mandates_array = $response['mandates']['mandate'];
                 if (isset($mandates_array['status'])) { // special case when only one
-                    $mandates_array[0] = $mandates_array;
+                    $mandates_array = array($mandates_array);
                 }
                 foreach ($mandates_array as $mandate) {
                     // clientRef, status, error code(s) (if any) per line
