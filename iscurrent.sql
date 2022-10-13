@@ -10,6 +10,7 @@ BEGIN
   SELECT
     'setIsCurrent() is misbehaving'
    ,CONCAT (`quantity_ddrefs`,' mandates with ',`quantity_current`,' current rows (where IsCurrent=1): ',`ddrefs`)
+   ,null
   FROM (
     SELECT
       `t`.`qty` AS `quantity_current`
