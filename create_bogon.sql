@@ -1,4 +1,35 @@
 
+DELIMITER $$
+DROP PROCEDURE IF EXISTS `bogonCheckAmounts`$$
+CREATE PROCEDURE `bogonCheckAmounts` (
+)
+BEGIN
+  INSERT INTO `rsm_bogon`
+    SELECT
+      null
+     ,'Mandate Amount not consistent with collection PaidAmount'
+     ,CONCAT(
+        '[ '
+       ,`c`.`ClientRef`
+       ,' x'
+       ,COUNT(`c`.`id`)
+       ,' collections @'
+       ,`c`.`PaidAmount`
+       ,' ] conflicts with [ '
+       ,`m`.`ClientRef`
+       ,' mandate @'
+       ,`m`.`Amount`
+       ,' ]'
+      )
+     ,null
+    FROM `rsm_collection` AS `c`
+    JOIN `rsm_mandate` AS `m`
+      ON `m`.`DDRefOrig`=`c`.`DDRefOrig`
+    WHERE `c`.`PaidAmount`>0
+      AND `m`.`Amount`!=`c`.`PaidAmount`
+    GROUP BY `c`.`DDRefOrig`
+  ;
+END$$
 
 
 DELIMITER $$
@@ -49,39 +80,6 @@ BEGIN
        `m2`.`Created`>=`m1`.`Created`
     OR `m2`.`Created` IS NULL
    )
-  ;
-END$$
-
-
-DELIMITER $$
-DROP PROCEDURE IF EXISTS `bogonCheckAmounts`$$
-CREATE PROCEDURE `bogonCheckAmounts` (
-)
-BEGIN
-  INSERT INTO `rsm_bogon`
-    SELECT
-      null
-     ,'Mandate Amount not consistent with collection PaidAmount'
-     ,CONCAT(
-        '[ '
-       ,`c`.`ClientRef`
-       ,' x'
-       ,COUNT(`c`.`id`)
-       ,' collections @'
-       ,`c`.`PaidAmount`
-       ,' ] conflicts with [ '
-       ,`m`.`ClientRef`
-       ,' mandate @'
-       ,`m`.`Amount`
-       ,' ]'
-      )
-     ,null
-    FROM `rsm_collection` AS `c`
-    JOIN `rsm_mandate` AS `m`
-      ON `m`.`DDRefOrig`=`c`.`DDRefOrig`
-    WHERE `c`.`PaidAmount`>0
-      AND `m`.`Amount`!=`c`.`PaidAmount`
-    GROUP BY `c`.`DDRefOrig`
   ;
 END$$
 
@@ -218,6 +216,46 @@ END$$
 
 
 DELIMITER $$
+DROP PROCEDURE IF EXISTS `bogonCheckLive`$$
+CREATE PROCEDURE `bogonCheckLive` (
+)
+BEGIN
+  INSERT INTO `rsm_bogon`
+    SELECT
+      null
+     ,'Mandate Status LIVE not unique per DDRefOrig'
+     ,CONCAT(
+        `m1`.`DDRefOrig`
+       ,'[ #'
+       ,`m2`.`id`
+       ,' created='
+       ,`m2`.`Created`
+       ,' start='
+       ,`m2`.`StartDate`
+       ,' '
+       ,`m2`.`Status`
+       ,' ] conflicts with [ #'
+       ,`m1`.`id`
+       ,' created='
+       ,`m1`.`Created`
+       ,' start='
+       ,`m1`.`StartDate`
+       ,' '
+       ,`m1`.`Status`
+       ,' ]'
+      )
+     ,null
+    FROM `rsm_mandate` AS `m1`
+    JOIN `rsm_mandate` AS `m2`
+      ON `m2`.`DDRefOrig`=`m1`.`DDRefOrig`
+     AND `m2`.`id`>`m1`.`id`
+    WHERE `m1`.`Status`='LIVE'
+      AND `m2`.`Status`='LIVE'
+  ;
+END$$
+
+
+DELIMITER $$
 DROP PROCEDURE IF EXISTS `bogonCheckPaidAmount`$$
 CREATE PROCEDURE `bogonCheckPaidAmount` (
 )
@@ -262,6 +300,7 @@ CALL `bogonCheckClientRef`();
 CALL `bogonCheckCollections`();
 CALL `bogonCheckFreqAmount`();
 CALL `bogonCheckAmounts`();
+CALL `bogonCheckLive`();
 
 ALTER TABLE `rsm_bogon`
 DROP COLUMN `tmp`
@@ -273,4 +312,5 @@ DROP PROCEDURE `bogonCheckClientRef`;
 DROP PROCEDURE `bogonCheckCollections`;
 DROP PROCEDURE `bogonCheckFreqAmount`;
 DROP PROCEDURE `bogonCheckAmounts`;
+DROP PROCEDURE `bogonCheckLive`;
 
