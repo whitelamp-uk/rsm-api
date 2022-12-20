@@ -34,6 +34,7 @@ FROM (
 JOIN `rsm_mandate` AS `m`
   ON `m`.`DDRefOrig`=`aggregate`.`DDRefOrig`
  AND `m`.`IsCurrent`>0
+{{WHERE}}
 GROUP BY `DDRefOrig`
 ORDER BY `DDRefOrig`
 ;

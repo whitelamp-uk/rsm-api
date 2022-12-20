@@ -264,7 +264,7 @@ class PayApi {
         $this->output_collections ();
     }
 
-    public function insert_mandates ($mandates)  {
+    public function insert_mandates ($mandates,&$bad=0,&$good=0)  {
         if (!count($mandates)) {
             fwrite (STDERR,"No mandates to insert\n");
             return true;
@@ -280,7 +280,7 @@ class PayApi {
                 throw new \Exception ("Payment frequency '{$m['Freq']}' is not FLC standards compliant");
                 return false;
             }
-            $sortcode = str_replace ('-','',$m['SortCode']);
+            $sortcode = str_replace ('-','',$m['Sortcode']);
             $csd = collection_startdate (gmdate('Y-m-d'),$m['PayDay']);
             $dt_csd = \DateTime::createFromFormat ('Y-m-d',$csd); // is there a better way of converting?
             $rsm_startdate = $dt_csd->format ('d/m/Y');
@@ -386,8 +386,9 @@ class PayApi {
     }
 
     private function output_mandates ( ) {
-        $sql                = "INSERT INTO `".RSM_TABLE_MANDATE."`\n";
-        $sql               .= file_get_contents (__DIR__.'/select_mandate.sql');
+        $sql    = "INSERT INTO `".RSM_TABLE_MANDATE."`\n";
+        $sql   .= file_get_contents (__DIR__.'/select_mandate.sql');
+        $sql    = str_replace ('{{WHERE}}',"",$sql);
         echo $sql;
         try {
             $this->connection->query ($sql);
@@ -398,6 +399,69 @@ class PayApi {
             throw new \Exception ('SQL error');
             return false;
         }
+    }
+
+    public function player_new_tmp ($mandate,$db_live=null) {
+        // Use API and insert the internal mandate
+        $this->insert_mandates ([$mandate],$bad);
+        if ($bad>0) {
+            return false;
+        }
+        $crf = $this->connection->real_escape_string ($mandate['ClientRef']);
+        // Insert the internal mandate
+
+// TODO
+$data = [];
+
+        $this->table_load ($data,'rsm_mandate',$this->fieldsm);
+        if ($db_live) {
+            // Put the internal mandate live
+            $q = "
+              INSERT INTO `$db_live`.`rsm_mandate`
+              SELECT * FROM `rsm_mandate`
+              WHERE `ClientRef`='$crf'
+            ";
+            try {
+                $this->connection->query ($sql);
+            }
+            catch (\mysqli_sql_exception $e) {
+                $this->error_log (114,'Copy new mandate live failed: '.$e->getMessage());
+                throw new \Exception ('SQL error '.$e->getMessage());
+                return false;
+            }
+        }
+        // Write out the blotto2 mandate
+        $table  = RSM_TABLE_MANDATE;
+        $sql    = "INSERT INTO `$table`\n";
+        $sql   .= file_get_contents (__DIR__.'/select_mandate.sql');
+        $sql    = str_replace ('{{WHERE}}',"WHERE `m`.`ClientRef`='$crf'",$sql);
+        echo $sql;
+        try {
+            $this->connection->query ($sql);
+        }
+        catch (\mysqli_sql_exception $e) {
+            $this->error_log (113,'Find new mandate failed: '.$e->getMessage());
+            throw new \Exception ('SQL error '.$e->getMessage());
+            return false;
+        }
+        if ($db_live) {
+            // Put the blotto2 mandate live
+            $q = "
+              INSERT INTO `$db_live`.`$table`
+              SELECT * FROM `$table`
+              WHERE `ClientRef`='$crf'
+            ";
+            try {
+                $this->connection->query ($sql);
+            }
+            catch (\mysqli_sql_exception $e) {
+                $this->error_log (112,'Copy new mandate live failed: '.$e->getMessage());
+                throw new \Exception ('SQL error '.$e->getMessage());
+                return false;
+            }
+        }
+        // TODO: disable previous via API using $mandate[ClientRefPrevious]; in short term do it manually
+        return true;
     }
 
     private function report_request ($what,$start,$end,$limit) {
