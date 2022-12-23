@@ -336,6 +336,8 @@ class PayApi {
                     // clientRef, status, error code(s) (if any) per line
                     $body .= $mandate['clientRef'].' '.$mandate['status']."\n";
                     if (isset($mandate['errors'])) {
+                        $ocr = explode (BLOTTO_CREF_SPLITTER,$mandate['clientRef']) [0];
+                        $body .= adminer('Supporters','original_client_ref','=',$ocr)."\n";
                         $error_array = $mandate['errors']['error'];
                         if (isset($error_array['code'])) {
                             $error_array[0] = $error_array;  // same as mandates above
