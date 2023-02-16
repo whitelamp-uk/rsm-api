@@ -381,7 +381,7 @@ class PayApi {
             tee ("Output {$this->connection->affected_rows} collections\n");
         }
         catch (\mysqli_sql_exception $e) {
-            $this->error_log (120,'SQL insert failed: '.$e->getMessage());
+            $this->error_log (121,'SQL insert failed: '.$e->getMessage());
             throw new \Exception ('SQL error');
             return false;
         }
@@ -397,7 +397,7 @@ class PayApi {
             tee ("Output {$this->connection->affected_rows} mandates\n");
         }
         catch (\mysqli_sql_exception $e) {
-            $this->error_log (119,'SQL insert failed: '.$e->getMessage());
+            $this->error_log (120,'SQL insert failed: '.$e->getMessage());
             throw new \Exception ('SQL error');
             return false;
         }
@@ -407,14 +407,28 @@ class PayApi {
         // Use API and insert the internal mandate
         $this->insert_mandates ([$mandate],$bad);
         if ($bad>0) {
-            return false;
+           // The API did not create the mandate
+           return null;
         }
         $crf = $this->connection->real_escape_string ($mandate['ClientRef']);
         // Insert the internal mandate
-
-// TODO
-$data = [];
-
+        $today = gmdate ('Y-m-d');
+        $data = [
+            [
+                'status'              => 'PENDING',
+                'created'             => $today, // rsm_mandate is ephemeral; if this changes a bit next build, no sweat
+                'updated'             => $today, // ditto
+                'ddRefNo'             => uuid (), // ditto so anything unique will do until next build
+                'clientRef'           => $mandate['ClientRef'],
+                'name'                => $mandate['Name'],
+                'sortcode'            => $mandate['Sortcode'],
+                'account'             => $mandate['Account'],
+                'frequency'           => $mandate['Freq'],
+                'amount'              => $mandate['Amount'],
+                'startDate'           => $mandate['StartDate'],
+                'paymentReference'    => $mandate['Chances'],
+            ]
+        ];
         $this->table_load ($data,'rsm_mandate',$this->fieldsm);
         // Insert the blotto2 mandate
         $table  = RSM_TABLE_MANDATE;
@@ -426,8 +440,9 @@ $data = [];
             $this->connection->query ($sql);
         }
         catch (\mysqli_sql_exception $e) {
-            $this->error_log (113,'Find new mandate failed: '.$e->getMessage());
+            $this->error_log (119,'Find new mandate failed: '.$e->getMessage());
             throw new \Exception ('SQL error '.$e->getMessage());
+            // The API created the mandate but other processes did not complete
             return false;
         }
         if ($db_live) {
@@ -441,8 +456,9 @@ $data = [];
                 $this->connection->query ($sql);
             }
             catch (\mysqli_sql_exception $e) {
-                $this->error_log (114,'Copy new mandate live failed: '.$e->getMessage());
+                $this->error_log (118,'Copy new mandate live failed: '.$e->getMessage());
                 throw new \Exception ('SQL error '.$e->getMessage());
+                // The API created the mandate but other processes did not complete
                 return false;
             }
             // Insert the live blotto2 mandate
@@ -455,12 +471,14 @@ $data = [];
                 $this->connection->query ($sql);
             }
             catch (\mysqli_sql_exception $e) {
-                $this->error_log (112,'Copy new mandate live failed: '.$e->getMessage());
+                $this->error_log (117,'Copy new mandate live failed: '.$e->getMessage());
                 throw new \Exception ('SQL error '.$e->getMessage());
+                // The API created the mandate but other processes did not complete
                 return false;
             }
         }
-        // TODO: disable previous via API using $mandate[ClientRefPrevious]; in short term do it manually
+        // TODO: cancel previous via API using $mandate[ClientRefPrevious]; in short term admin does it via provider dashboard
+        // The API created the mandate and all other processes completed
         return true;
     }
 
@@ -496,7 +514,7 @@ $data = [];
     private function setup ( ) {
         foreach ($this->constants as $c) {
             if (!defined($c)) {
-                $this->error_log (118,"$c not defined");
+                $this->error_log (116,"$c not defined");
                 throw new \Exception ('Configuration error');
                 return false;
             }
@@ -504,7 +522,7 @@ $data = [];
         if (RSM_FILE_DEBOGON) {
             $this->bogon_file = RSM_FILE_DEBOGON;
             if (!is_readable(RSM_FILE_DEBOGON)) {
-                $this->error_log (117,"Unreadable file '{$this->bogon_file}'");
+                $this->error_log (115,"Unreadable file '{$this->bogon_file}'");
                 throw new \Exception ("Bogon file '{$this->bogon_file}' is not readable");
                 return false;
             }
@@ -516,7 +534,7 @@ $data = [];
             $this->database = $db['db'];
         }
         catch (\mysqli_sql_exception $e) {
-            $this->error_log (116,'SQL select failed: '.$e->getMessage());
+            $this->error_log (114,'SQL select failed: '.$e->getMessage());
             throw new \Exception ('SQL database error');
             return false;
         }
@@ -541,7 +559,7 @@ $data = [];
             $file = 'alter_collection.sql';
         }
         else {
-            $this->error_log (115,"Internal error");
+            $this->error_log (113,"Internal error");
             throw new \Exception ("Table '$table' not recognised");
             return false;
         }
@@ -566,7 +584,7 @@ $data = [];
             echo "Inserted {$this->connection->affected_rows} rows into `$tablename`\n";
         }
         catch (\mysqli_sql_exception $e) {
-            $this->error_log (114,'SQL insert failed: '.$e->getMessage());
+            $this->error_log (112,'SQL insert failed: '.$e->getMessage());
             throw new \Exception ('SQL insert error');
             return false;
         }
