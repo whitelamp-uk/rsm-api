@@ -184,13 +184,21 @@ class PayApi {
         $sig                = $this->signature ($request);
         $footer             = $this->footer ();
         $postdata           = array ('xml'=>$header.$request.$sig.$footer);
-        //print_r ($postdata);
-        $response           = $this->curl_post (RSM_URL,$postdata);
-        //echo $response;
-        $new                = simplexml_load_string ($response);
-        $con                = json_encode ($new); //$new behaves like an object, but is actually a libxml resource 
-        $response           = json_decode ($con,true); // decode to associative array
-        return $response;
+        try {
+            //print_r ($postdata);
+            $response       = $this->curl_post (RSM_URL,$postdata);
+            //echo $response;
+            $new            = simplexml_load_string ($response);
+            $con            = json_encode ($new); //$new behaves like an object, but is actually a libxml resource 
+            $response       = json_decode ($con,true); // decode to associative array
+            return $response;
+        }
+        catch (\Exception $e) {
+            $this->error_log (111,'curl POST failed: '.$e->getMessage());
+            throw new \Exception ('curl POST failed');
+            return false;
+        }
+
     }
 
     private function header ($type) {
