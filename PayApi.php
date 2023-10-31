@@ -97,7 +97,7 @@ class PayApi {
         echo $sql;
         try {
             $results = $this->connection->query ($sql);
-            while ($b=$results->fetch_assoc($results)) {
+            while ($b=$results->fetch_assoc()) {
                 $bads[] = $b['ClientRef'];
             }
         }
