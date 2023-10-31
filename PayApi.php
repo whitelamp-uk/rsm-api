@@ -78,6 +78,37 @@ class PayApi {
     public function __destruct ( ) {
     }
 
+    public function bad_mandates ( ) {
+        $bads               = [];
+        $sql = "
+          SELECT
+            `m`.`ClientRef`
+          FROM `rsm_mandate` AS `m`
+          JOIN `blotto_player` AS `p`
+            ON `p`.`client_ref`=`m`.`ClientRef`
+          JOIN `blotto_supporter` AS `s`
+            ON `s`.`id`=`p`.`supporter_id`
+          -- This
+          WHERE `s`.`mandate_blocked`>0
+          -- conflicts with this
+            AND `m`.`Status`='LIVE'
+          ;
+        ";
+        echo $sql;
+        try {
+            $results = $this->connection->query ($sql);
+            while ($b=$results->fetch_assoc($results)) {
+                $bads[] = $b['ClientRef'];
+            }
+        }
+        catch (\mysqli_sql_exception $e) {
+            $this->error_log (110,'SQL select failed: '.$e->getMessage());
+            throw new \Exception ('SQL error');
+            return false;
+        }
+        return $bads;
+    }
+
     private function bogon_check ( ) {
         $this->execute (__DIR__.'/create_bogon.sql');
         $sql                = "SELECT COUNT(*) AS `qty` FROM `rsm_bogon`";
