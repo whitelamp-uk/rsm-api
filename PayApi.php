@@ -95,7 +95,7 @@ class PayApi {
             AND `m`.`Status`='LIVE'
           ;
         ";
-        echo $sql;
+        echo "$sql\n";
         try {
             $results = $this->connection->query ($sql);
             while ($b=$results->fetch_assoc()) {
