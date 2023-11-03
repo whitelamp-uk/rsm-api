@@ -83,6 +83,7 @@ class PayApi {
         $sql = "
           SELECT
             `m`.`ClientRef`
+           ,`m`.`Name`
           FROM `rsm_mandate` AS `m`
           JOIN `blotto_player` AS `p`
             ON `p`.`client_ref`=`m`.`ClientRef`
@@ -98,7 +99,7 @@ class PayApi {
         try {
             $results = $this->connection->query ($sql);
             while ($b=$results->fetch_assoc()) {
-                $bads[] = $b['ClientRef'];
+                $bads[] = $b;
             }
         }
         catch (\mysqli_sql_exception $e) {
