@@ -129,6 +129,24 @@ class PayApi {
         }
     }
 
+    public function cancel_mandate ($cref) {
+        $cref = $this->connection->real_escape_string($cref);
+        $what = 'setMandates';
+        $body = "<mandates>";
+        $body .= "<mandate>";
+        $body .= "<action>D</action>";
+        $body .= "<clientRef>{$cref}</clientRef>";
+        $body .= "</mandate>";
+        $body .= "</mandates>";
+        $request = $this->request_start ($what).$body.$this->request_end();
+        error_log($request); // send to logfile
+
+        $response = $this->handle ($what, $request);
+        error_log($response);
+
+        return $response;
+    }
+
     private function curl_post ($url,$post,$options=[]) {
     /*
         * Send a POST requst using cURL
