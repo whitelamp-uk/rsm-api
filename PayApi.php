@@ -131,11 +131,26 @@ class PayApi {
 
     public function cancel_mandate ($cref) {
         $cref = $this->connection->real_escape_string($cref);
+
+        $sql                = "SELECT `Name`,`Sortcode`,`Account` FROM `rsm_mandate`";
+        try {
+            $res            = $this->connection->query ($sql);
+            $res            = $res->fetch_assoc();
+        }
+        catch (\mysqli_sql_exception $e) {
+            $this->error_log (127,'SQL select failed: '.$e->getMessage());
+            throw new \Exception ('SQL database error');
+            return false;
+        }
+
         $what = 'setMandates';
         $body = "<mandates>";
         $body .= "<mandate>";
         $body .= "<action>D</action>";
         $body .= "<clientRef>{$cref}</clientRef>";
+        $body .= "<accountName>{$res['Name']}</accountName>";
+        $body .= "<accountNumber>{$res['Account']}</accountNumber>";
+        $body .= "<sortCode>{$res['Sortcode']}</sortCode>";
         $body .= "</mandate>";
         $body .= "</mandates>";
         $request = $this->request_start ($what).$body.$this->request_end();
