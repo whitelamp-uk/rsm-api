@@ -132,7 +132,8 @@ class PayApi {
     public function cancel_mandate ($cref) {
         $cref = $this->connection->real_escape_string($cref);
 
-        $sql                = "SELECT `Name`,`Sortcode`,`Account` FROM `rsm_mandate`";
+        $sql                = "SELECT `Name`,`Sortcode`,`Account`,`Amount`,`StartDate`,`Freq` FROM `rsm_mandate` ";
+        $sql               .= "WHERE `ClientRef` = '$cref'";
         try {
             $res            = $this->connection->query ($sql);
             $res            = $res->fetch_assoc();
@@ -148,9 +149,16 @@ class PayApi {
         $body .= "<mandate>";
         $body .= "<action>D</action>";
         $body .= "<clientRef>{$cref}</clientRef>";
+        //$body .= "<contactName>{$res['Name']}</contactName>"; // required - see insert_mandates
         $body .= "<accountName>{$res['Name']}</accountName>";
         $body .= "<accountNumber>{$res['Account']}</accountNumber>";
         $body .= "<sortCode>{$res['Sortcode']}</sortCode>";
+
+          //  $body .= "<amount>{$m['Amount']}</amount>";
+          //  $body .= "<frequency>{$this->frequency[$m['Freq']]}</frequency>";
+          //  $body .= "<startDate>".$rsm_startdate."</startDate>";
+            //$body .= "<paymentRef>{$m['Chances']}</paymentRef>";
+
         $body .= "</mandate>";
         $body .= "</mandates>";
         $request = $this->request_start ($what).$body.$this->request_end();
