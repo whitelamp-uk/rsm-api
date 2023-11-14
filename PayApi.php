@@ -142,7 +142,7 @@ class PayApi {
         error_log($request); // send to logfile
 
         $response = $this->handle ($what, $request);
-        error_log($response);
+        error_log(print_r($response,true));
 
         return $response;
     }
@@ -235,7 +235,7 @@ class PayApi {
         $footer             = $this->footer ();
         $postdata           = array ('xml'=>$header.$request.$sig.$footer);
         try {
-            //print_r ($postdata);
+            error_log(print_r ($postdata,true));
             $response       = $this->curl_post (RSM_URL,$postdata);
             //echo $response;
             $new            = simplexml_load_string ($response);
