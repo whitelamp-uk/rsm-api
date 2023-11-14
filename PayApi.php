@@ -144,19 +144,22 @@ class PayApi {
             return false;
         }
 
+        $dt_csd = \DateTime::createFromFormat ('Y-m-d',$res['StartDate']); // is there a better way of converting?
+        $rsm_startdate = $dt_csd->format ('d/m/Y');
+
         $what = 'setMandates';
         $body = "<mandates>";
         $body .= "<mandate>";
         $body .= "<action>D</action>";
         $body .= "<clientRef>{$cref}</clientRef>";
-        //$body .= "<contactName>{$res['Name']}</contactName>"; // required - see insert_mandates
+        $body .= "<contactName>{$res['Name']}</contactName>"; // required? - see insert_mandates
         $body .= "<accountName>{$res['Name']}</accountName>";
         $body .= "<accountNumber>{$res['Account']}</accountNumber>";
         $body .= "<sortCode>{$res['Sortcode']}</sortCode>";
 
-          //  $body .= "<amount>{$m['Amount']}</amount>";
-          //  $body .= "<frequency>{$this->frequency[$m['Freq']]}</frequency>";
-          //  $body .= "<startDate>".$rsm_startdate."</startDate>";
+        $body .= "<amount>{$res['Amount']}</amount>";
+        $body .= "<frequency>{$this->frequency[$res['Freq']]}</frequency>"; // really?
+        $body .= "<startDate>".$rsm_startdate."</startDate>";
             //$body .= "<paymentRef>{$m['Chances']}</paymentRef>";
 
         $body .= "</mandate>";
