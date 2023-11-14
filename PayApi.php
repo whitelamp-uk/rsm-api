@@ -132,7 +132,7 @@ class PayApi {
     public function cancel_mandate ($cref) {
         $cref = $this->connection->real_escape_string($cref);
 
-        $sql                = "SELECT `Name`,`Sortcode`,`Account`,`Amount`,`StartDate`,`Freq` FROM `rsm_mandate` ";
+        $sql                = "SELECT `Name`,`Sortcode`,`Account`,`Amount`,`StartDate`,`Freq`,`ChancesCsv` FROM `rsm_mandate` ";
         $sql               .= "WHERE `ClientRef` = '$cref'";
         try {
             $res            = $this->connection->query ($sql);
@@ -160,7 +160,7 @@ class PayApi {
         $body .= "<amount>{$res['Amount']}</amount>";
         $body .= "<frequency>{$this->frequency[$res['Freq']]}</frequency>"; // really?
         $body .= "<startDate>".$rsm_startdate."</startDate>";
-            //$body .= "<paymentRef>{$m['Chances']}</paymentRef>";
+        $body .= "<paymentRef>{$res['ChancesCsv']}</paymentRef>";
 
         $body .= "</mandate>";
         $body .= "</mandates>";
