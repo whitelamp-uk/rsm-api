@@ -130,38 +130,11 @@ class PayApi {
     }
 
     public function cancel_mandate ($cref) {
-        $cref = $this->connection->real_escape_string($cref);
-
-        $sql                = "SELECT `Name`,`Sortcode`,`Account`,`Amount`,`StartDate`,`Freq`,`ChancesCsv` FROM `rsm_mandate` ";
-        $sql               .= "WHERE `ClientRef` = '$cref'";
-        try {
-            $res            = $this->connection->query ($sql);
-            $res            = $res->fetch_assoc();
-        }
-        catch (\mysqli_sql_exception $e) {
-            $this->error_log (127,'SQL select failed: '.$e->getMessage());
-            throw new \Exception ('SQL database error');
-            return false;
-        }
-
-        $dt_csd = \DateTime::createFromFormat ('Y-m-d',$res['StartDate']); // is there a better way of converting?
-        $rsm_startdate = $dt_csd->format ('d/m/Y');
-
         $what = 'setMandates';
         $body = "<mandates>";
         $body .= "<mandate>";
+        $body .= "<clientRef>{$cref}</clientRef>"; // order is important!
         $body .= "<action>D</action>";
-        $body .= "<clientRef>{$cref}</clientRef>";
-        $body .= "<contactName>{$res['Name']}</contactName>"; // required? - see insert_mandates
-        $body .= "<accountName>{$res['Name']}</accountName>";
-        $body .= "<accountNumber>{$res['Account']}</accountNumber>";
-        $body .= "<sortCode>{$res['Sortcode']}</sortCode>";
-
-        $body .= "<amount>{$res['Amount']}</amount>";
-        $body .= "<frequency>{$this->frequency[$res['Freq']]}</frequency>"; // really?
-        $body .= "<startDate>".$rsm_startdate."</startDate>";
-        $body .= "<paymentRef>{$res['ChancesCsv']}</paymentRef>";
-
         $body .= "</mandate>";
         $body .= "</mandates>";
         $request = $this->request_start ($what).$body.$this->request_end();
