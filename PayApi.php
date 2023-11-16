@@ -140,10 +140,19 @@ class PayApi {
         $request = $this->request_start ($what).$body.$this->request_end();
         error_log($request); // send to logfile
 
-        $response = $this->handle ($what, $request);
-        error_log(print_r($response,true));
-
-        return $response;
+        $reply = $this->handle ($what, $request);
+        error_log(print_r($reply,true));
+        if (isset($reply['response'])) {
+            $response = $reply['response'];
+            if (isset($response['summary']['totalSuccessful']) && $response['summary']['totalSuccessful']==1) {
+                return 'OK';
+            }
+            if (isset($response['mandates']['mandate']['errors']['error']['detail'])) {
+                return $response['mandates']['mandate']['errors']['error']['detail'];
+            }
+            return $response;
+        }
+        return $reply;
     }
 
     private function curl_post ($url,$post,$options=[]) {
