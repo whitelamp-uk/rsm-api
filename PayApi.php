@@ -243,7 +243,7 @@ class PayApi {
         $footer             = $this->footer ();
         $postdata           = array ('xml'=>$header.$request.$sig.$footer);
         try {
-            error_log(print_r ($postdata,true));
+            //error_log(print_r ($postdata,true));
             $response       = $this->curl_post (RSM_URL,$postdata);
             //echo $response;
             $new            = simplexml_load_string ($response);
