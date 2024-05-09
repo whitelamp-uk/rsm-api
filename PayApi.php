@@ -330,103 +330,105 @@ class PayApi {
         $this->output_collections ();
     }
 
-    public function insert_mandates ($mandates,&$bad=0,&$good=0)  {
-        if (!count($mandates)) {
+    public function insert_mandates ($allmandates,&$bad=0,&$good=0)  {
+        if (!count($allmandates)) {
             fwrite (STDERR,"No mandates to insert\n");
             return true;
         }
-        $what = 'setMandates';
-        $body = "<mandates>";
-        foreach ($mandates as $m) {
-            if (trim($m['Type'])!='C') {
-                throw new \Exception ("Currently treating an FLC record not of type 'C' (= create new customer) as an error");
-                return false;
-            }
-            if (!array_key_exists($m['Freq'],$this->frequency)) {
-                throw new \Exception ("Payment frequency '{$m['Freq']}' is not FLC standards compliant");
-                return false;
-            }
-            $sortcode = str_replace ('-','',$m['Sortcode']);
-            $csd = collection_startdate (gmdate('Y-m-d'),$m['PayDay']);
-            $dt_csd = \DateTime::createFromFormat ('Y-m-d',$csd); // is there a better way of converting?
-            $rsm_startdate = $dt_csd->format ('d/m/Y');
-
-            $action = (strtolower($m['Type']) == 'c') ? 'N' : 'A'; // New, Amend, Delete
-            //some optional elements commented out - but left here for reference!
-            $body .= "<mandate>";
-            // $body .= "<tradingName>".RSM_TRADING_NAME."</tradingName>"; // e.g. if account holder is business
-            $body .= "<contactName>{$m['Name']}</contactName>"; // required if confirmation emails are enabled (whether or not mandatory)
-            // $body .= "<address1></address1>"; // required if address checking enabled
-            // $body .= "<address2></address2>";
-            // $body .= "<address3></address3>";
-            // $body .= "<town></town>";
-            // $body .= "<postcode></postcode>";
-            // $body .= "<phone></phone>";
-            // $body .= "<email></email>"; // required if confirmation email is mandatory
-            $body .= "<clientRef>{$m['ClientRef']}</clientRef>";
-            $body .= "<accountName>{$m['Name']}</accountName>";
-            $body .= "<accountNumber>{$m['Account']}</accountNumber>";
-            $body .= "<sortCode>$sortcode</sortCode>";
-            $body .= "<action>{$action}</action>";
-            //$body .= "<ddRefNo></ddRefNo>";
-            $body .= "<amount>{$m['Amount']}</amount>";
-            $body .= "<frequency>{$this->frequency[$m['Freq']]}</frequency>";
-            $body .= "<startDate>".$rsm_startdate."</startDate>";
-            //$body .= "<mandateType>{$m[]}</mandateType>";
-            //$body .= "<shortId>{$m[]}</shortId>";
-            //$body .= "<endDate>{$m[]}</endDate>";
-            $body .= "<paymentRef>{$m['Chances']}</paymentRef>";
-            $body .= "</mandate>";
-        }
-        $body .= "</mandates>";
-        $request = $this->request_start ($what).$body.$this->request_end();
-        print_r($request); // send to logfile
-
-        $response = $this->handle ($what, $request);
-
-        $body = "";
-        $mandates_array = [];
-        if (is_array($response)) {
-            $signature = $response['signature'];
-            echo $signature."\n"; // dump to logfile
-            $response = $response['response'];
-            print_r ($response); // dump to logfile
-            if (is_array($response) && array_key_exists('summary',$response)) {
-                $good = $response['summary']['totalSuccessful'];
-                $bad  = $response['summary']['totalFailed'];
-                $mandates_array = $response['mandates']['mandate'];
-                if (isset($mandates_array['status'])) { // special case when only one
-                    $mandates_array = array($mandates_array);
+        $chunked = array_chunk($allmandates, 150);
+        foreach ($chunked as $mandates) {
+            $what = 'setMandates';
+            $body = "<mandates>";
+            foreach ($mandates as $m) {
+                if (trim($m['Type'])!='C') {
+                    throw new \Exception ("Currently treating an FLC record not of type 'C' (= create new customer) as an error");
+                    return false;
                 }
-                foreach ($mandates_array as $mandate) {
-                    // clientRef, status, error code(s) (if any) per line
-                    $body .= $mandate['clientRef'].' '.$mandate['status']."\n";
-                    if (isset($mandate['errors'])) {
-                        $ocr = explode (BLOTTO_CREF_SPLITTER,$mandate['clientRef']) [0];
-                        $body .= adminer('Supporters','original_client_ref','=',$ocr)."\n";
-                        $error_array = $mandate['errors']['error'];
-                        if (isset($error_array['code'])) {
-                            $error_array[0] = $error_array;  // same as mandates above
-                        }
-                        foreach ($error_array as $errdetail) {
-                            $body .= $errdetail['code'].' '.$errdetail['detail']."\n";
+                if (!array_key_exists($m['Freq'],$this->frequency)) {
+                    throw new \Exception ("Payment frequency '{$m['Freq']}' is not FLC standards compliant");
+                    return false;
+                }
+                $sortcode = str_replace ('-','',$m['Sortcode']);
+                $csd = collection_startdate (gmdate('Y-m-d'),$m['PayDay']);
+                $dt_csd = \DateTime::createFromFormat ('Y-m-d',$csd); // is there a better way of converting?
+                $rsm_startdate = $dt_csd->format ('d/m/Y');
+
+                $action = (strtolower($m['Type']) == 'c') ? 'N' : 'A'; // New, Amend, Delete
+                //some optional elements commented out - but left here for reference!
+                $body .= "<mandate>";
+                // $body .= "<tradingName>".RSM_TRADING_NAME."</tradingName>"; // e.g. if account holder is business
+                $body .= "<contactName>{$m['Name']}</contactName>"; // required if confirmation emails are enabled (whether or not mandatory)
+                // $body .= "<address1></address1>"; // required if address checking enabled
+                // $body .= "<address2></address2>";
+                // $body .= "<address3></address3>";
+                // $body .= "<town></town>";
+                // $body .= "<postcode></postcode>";
+                // $body .= "<phone></phone>";
+                // $body .= "<email></email>"; // required if confirmation email is mandatory
+                $body .= "<clientRef>{$m['ClientRef']}</clientRef>";
+                $body .= "<accountName>{$m['Name']}</accountName>";
+                $body .= "<accountNumber>{$m['Account']}</accountNumber>";
+                $body .= "<sortCode>$sortcode</sortCode>";
+                $body .= "<action>{$action}</action>";
+                //$body .= "<ddRefNo></ddRefNo>";
+                $body .= "<amount>{$m['Amount']}</amount>";
+                $body .= "<frequency>{$this->frequency[$m['Freq']]}</frequency>";
+                $body .= "<startDate>".$rsm_startdate."</startDate>";
+                //$body .= "<mandateType>{$m[]}</mandateType>";
+                //$body .= "<shortId>{$m[]}</shortId>";
+                //$body .= "<endDate>{$m[]}</endDate>";
+                $body .= "<paymentRef>{$m['Chances']}</paymentRef>";
+                $body .= "</mandate>";
+            }
+            $body .= "</mandates>";
+            $request = $this->request_start ($what).$body.$this->request_end();
+            print_r($request); // send to logfile
+
+            $response = $this->handle ($what, $request);
+
+            $body = "";
+            $mandates_array = [];
+            if (is_array($response)) {
+                $signature = $response['signature'];
+                echo $signature."\n"; // dump to logfile
+                $response = $response['response'];
+                print_r ($response); // dump to logfile
+                if (is_array($response) && array_key_exists('summary',$response)) {
+                    $good = $response['summary']['totalSuccessful'];
+                    $bad  = $response['summary']['totalFailed'];
+                    $mandates_array = $response['mandates']['mandate'];
+                    if (isset($mandates_array['status'])) { // special case when only one
+                        $mandates_array = array($mandates_array);
+                    }
+                    foreach ($mandates_array as $mandate) {
+                        // clientRef, status, error code(s) (if any) per line
+                        $body .= $mandate['clientRef'].' '.$mandate['status']."\n";
+                        if (isset($mandate['errors'])) {
+                            $ocr = explode (BLOTTO_CREF_SPLITTER,$mandate['clientRef']) [0];
+                            $body .= adminer('Supporters','original_client_ref','=',$ocr)."\n";
+                            $error_array = $mandate['errors']['error'];
+                            if (isset($error_array['code'])) {
+                                $error_array[0] = $error_array;  // same as mandates above
+                            }
+                            foreach ($error_array as $errdetail) {
+                                $body .= $errdetail['code'].' '.$errdetail['detail']."\n";
+                            }
                         }
                     }
+                }
+                else {
+                    $good = 0;
+                    $bad = count ($mandates);
                 }
             }
             else {
                 $good = 0;
                 $bad = count ($mandates);
             }
+            // send
+            $subj = "RSM insert mandates for ".strtoupper(BLOTTO_ORG_USER).", $good good, $bad bad";
+            mail(BLOTTO_EMAIL_WARN_TO, $subj, $body);
         }
-        else {
-            $good = 0;
-            $bad = count ($mandates);
-        }
-        // send
-        $subj = "RSM insert mandates for ".strtoupper(BLOTTO_ORG_USER).", $good good, $bad bad";
-        mail(BLOTTO_EMAIL_WARN_TO, $subj, $body);
-
         // whatever happens we continue the build process; email alerts admins to problems
         // and we'll try again on next build.
         return true;
