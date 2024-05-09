@@ -382,7 +382,7 @@ class PayApi {
             }
             $body .= "</mandates>";
             $request = $this->request_start ($what).$body.$this->request_end();
-            print_r($request); // send to logfile
+            //print_r($request); // send to logfile
 
             $response = $this->handle ($what, $request);
 
