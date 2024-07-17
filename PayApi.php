@@ -399,9 +399,9 @@ class PayApi {
             $mandates_array = [];
             if (is_array($response)) {
                 $signature = $response['signature'];
-                echo $signature."\n"; // dump to logfile
+                //echo $signature."\n"; // dump to logfile
                 $response = $response['response'];
-                print_r ($response); // dump to logfile
+                //print_r ($response); // dump to logfile
                 if (is_array($response) && array_key_exists('summary',$response)) {
                     $good = $response['summary']['totalSuccessful'];
                     $bad  = $response['summary']['totalFailed'];
@@ -452,7 +452,7 @@ class PayApi {
         $sql                = "INSERT INTO `".RSM_TABLE_COLLECTION."`\n";
         $sql               .= file_get_contents (__DIR__.'/select_collection.sql');
         $sql                = str_replace ('{{RSM_PAY_INTERVAL}}',RSM_PAY_INTERVAL,$sql);
-        echo $sql;
+        //echo $sql;
         try {
             $this->connection->query ($sql);
             tee ("Output {$this->connection->affected_rows} collections\n");
@@ -468,7 +468,7 @@ class PayApi {
         $sql    = "INSERT INTO `".RSM_TABLE_MANDATE."`\n";
         $sql   .= file_get_contents (__DIR__.'/select_mandate.sql');
         $sql    = str_replace ('{{WHERE}}',"",$sql);
-        echo $sql;
+        //echo $sql;
         try {
             $this->connection->query ($sql);
             tee ("Output {$this->connection->affected_rows} mandates\n");
@@ -622,7 +622,6 @@ class PayApi {
         $xml          = simplexml_load_string ($request,'SimpleXMLElement',LIBXML_NOBLANKS);
         $xmlarr       = explode ("\n",$xml->asXML());
         $noblanks     = trim ($xmlarr[1]);
-        //echo "\n\n!!".$noblanks.RSM_PASSWORD."!!\n\n";
         $sig          = hash ('sha256',$noblanks.RSM_PASSWORD);
         $sig          = '
     <signature>'.$sig.'</signature>';
