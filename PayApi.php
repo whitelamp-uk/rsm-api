@@ -180,13 +180,22 @@ class PayApi {
 
         $ch = curl_init ();
         curl_setopt_array ($ch,$options+$defaults);
-        if (!($result=curl_exec($ch))) {
+        $attempts = 0;
+        while (($result=curl_exec($ch)) === false) {
             $this->error_log (125,curl_error($ch));
-            throw new \Exception ("cURL POST error");
-            return false;
+            if (curl_errno($ch)==CURLE_OPERATION_TIMEDOUT) {
+                $attempts++;
+            } else {
+                throw new \Exception ("cURL POST error : ".curl_error($ch));
+                return false;
+            }
+            if ($attempts >= BLOTTO_CURL_ATTEMPTS) {
+                throw new \Exception ("cURL POST timeout attempts: $attempts");
+                return false;
+            }
         }
-        curl_close ($ch);
-        return $result;
+    curl_close ($ch);
+    return $result;
     }
 
     private function debogon ( ) {
