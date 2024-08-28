@@ -480,7 +480,7 @@ class PayApi {
         }
     }
 
-    public function player_new_tmp ($mandate,$db_live=null) {
+    public function player_new ($mandate,$db_live=null) {
         // Use API and insert the internal mandate
         $this->insert_mandates ([$mandate],$bad);
         if ($bad>0) {
@@ -507,11 +507,11 @@ class PayApi {
                 'paymentReference'    => $mandate['Chances'],
             ]
         ];
-        $this->table_load ($data,'rsm_mandate',$this->fieldsm);
+        $this->table_load ($data,'rsm_mandate',$this->fieldsm); // add to rsm_mandate
         // Insert the blotto2 mandate
-        $table  = RSM_TABLE_MANDATE;
+        $table  = RSM_TABLE_MANDATE; // in practice blotto_build_mandate
         $sql    = "INSERT INTO `$table`\n";
-        $sql   .= file_get_contents (__DIR__.'/select_mandate.sql');
+        $sql   .= file_get_contents (__DIR__.'/select_mandate.sql'); // get from rsm_mandate
         $sql    = str_replace ('{{WHERE}}',"WHERE `m`.`ClientRef`='$crf'",$sql);
         echo $sql;
         try {
@@ -555,7 +555,7 @@ class PayApi {
                 return false;
             }
         }
-        // TODO: cancel previous via API using $mandate[ClientRefPrevious]; in short term admin does it via provider dashboard
+        // Note that old mandate is cancelled in calling function update().
         // The API created the mandate and all other processes completed
         return true;
     }
