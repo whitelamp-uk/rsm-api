@@ -185,6 +185,7 @@ class PayApi {
             $this->error_log (125,curl_error($ch));
             if (curl_errno($ch)==CURLE_OPERATION_TIMEDOUT) {
                 $attempts++;
+                $this->error_log (125,"curl timeout, attempt number ".$attempts);
             } else {
                 throw new \Exception ("cURL POST error : ".curl_error($ch));
                 return false;
@@ -344,6 +345,8 @@ class PayApi {
             fwrite (STDERR,"No mandates to insert\n");
             return true;
         }
+        $good = $bad = 0;
+        $mailbody = "";
         $chunked = array_chunk($allmandates, 150);
         foreach ($chunked as $mandates) {
             $what = 'setMandates';
@@ -395,49 +398,47 @@ class PayApi {
 
             $response = $this->handle ($what, $request);
 
-            $body = "";
-            $mandates_array = [];
+            $mailbody = "";
             if (is_array($response)) {
                 $signature = $response['signature'];
                 //echo $signature."\n"; // dump to logfile
                 $response = $response['response'];
                 //print_r ($response); // dump to logfile
-                if (is_array($response) && array_key_exists('summary',$response)) {
-                    $good = $response['summary']['totalSuccessful'];
-                    $bad  = $response['summary']['totalFailed'];
+                if (array_key_exists('summary',$response)) {
+                    $good += $response['summary']['totalSuccessful'];
+                    $bad  += $response['summary']['totalFailed'];
                     $mandates_array = $response['mandates']['mandate'];
                     if (isset($mandates_array['status'])) { // special case when only one
                         $mandates_array = array($mandates_array);
                     }
                     foreach ($mandates_array as $mandate) {
                         // clientRef, status, error code(s) (if any) per line
-                        $body .= $mandate['clientRef'].' '.$mandate['status']."\n";
+                        $mailbody .= $mandate['clientRef'].' '.$mandate['status']."\n";
                         if (isset($mandate['errors'])) {
                             $ocr = explode (BLOTTO_CREF_SPLITTER,$mandate['clientRef']) [0];
-                            $body .= adminer('Supporters','original_client_ref','=',$ocr)."\n";
+                            $mailbody .= adminer('Supporters','original_client_ref','=',$ocr)."\n";
                             $error_array = $mandate['errors']['error'];
                             if (isset($error_array['code'])) {
                                 $error_array[0] = $error_array;  // same as mandates above
                             }
                             foreach ($error_array as $errdetail) {
-                                $body .= $errdetail['code'].' '.$errdetail['detail']."\n";
+                                $mailbody .= $errdetail['code'].' '.$errdetail['detail']."\n";
                             }
                         }
                     }
                 }
                 else {
-                    $good = 0;
-                    $bad = count ($mandates);
+                    $bad += count ($mandates);
+                    $mailbody .= print_r($response, true);
                 }
             }
             else {
-                $good = 0;
-                $bad = count ($mandates);
+                $bad += count ($mandates);
+                $mailbody .= print_r($response, true);
             }
-            // send
-            $subj = "RSM insert mandates for ".strtoupper(BLOTTO_ORG_USER).", $good good, $bad bad";
-            mail(BLOTTO_EMAIL_WARN_TO, $subj, $body);
         }
+        $subj = "RSM insert mandates for ".strtoupper(BLOTTO_ORG_USER).", $good good, $bad bad";
+        mail(BLOTTO_EMAIL_WARN_TO, $subj, $mailbody);
         // whatever happens we continue the build process; email alerts admins to problems
         // and we'll try again on next build.
         return true;
