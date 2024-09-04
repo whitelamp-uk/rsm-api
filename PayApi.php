@@ -195,6 +195,9 @@ class PayApi {
                 return false;
             }
         }
+        if ($attempts) {
+            $this->error_log("$attempts attempt(s) on this chunk");
+        }
     curl_close ($ch);
     return $result;
     }
@@ -394,16 +397,12 @@ class PayApi {
             }
             $body .= "</mandates>";
             $request = $this->request_start ($what).$body.$this->request_end();
-            //print_r($request); // send to logfile
 
             $response = $this->handle ($what, $request);
 
             $mailbody = "";
             if (is_array($response)) {
-                $signature = $response['signature'];
-                //echo $signature."\n"; // dump to logfile
                 $response = $response['response'];
-                //print_r ($response); // dump to logfile
                 if (array_key_exists('summary',$response)) {
                     $good += $response['summary']['totalSuccessful'];
                     $bad  += $response['summary']['totalFailed'];
@@ -417,23 +416,19 @@ class PayApi {
                         if (isset($mandate['errors'])) {
                             $ocr = explode (BLOTTO_CREF_SPLITTER,$mandate['clientRef']) [0];
                             $mailbody .= adminer('Supporters','original_client_ref','=',$ocr)."\n";
-                            $error_array = $mandate['errors']['error'];
-                            if (isset($error_array['code'])) {
-                                $error_array[0] = $error_array;  // same as mandates above
-                            }
-                            foreach ($error_array as $errdetail) {
-                                $mailbody .= $errdetail['code'].' '.$errdetail['detail']."\n";
-                            }
+                            $mailbody .= print_r($mandate['errors'], true);
                         }
                     }
                 }
                 else {
                     $bad += count ($mandates);
+                    $mailbody .= "No summary in RSM response:\n";
                     $mailbody .= print_r($response, true);
                 }
             }
             else {
                 $bad += count ($mandates);
+                $mailbody .= "RSM response not an array:\n";
                 $mailbody .= print_r($response, true);
             }
         }
