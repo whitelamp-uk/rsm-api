@@ -196,7 +196,7 @@ class PayApi {
             }
         }
         if ($attempts) {
-            $this->error_log("$attempts attempt(s) on this chunk");
+            $this->error_log (125,"$attempts attempt(s) on this chunk");
         }
     curl_close ($ch);
     return $result;
