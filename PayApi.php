@@ -198,7 +198,7 @@ class PayApi {
             }
         }
         if ($attempts) {
-            $this->error_log("$attempts timeout(s) on this curl_post");
+            $this->error_log (125,"$attempts attempt(s) on this curl_post");
         }
     curl_close ($ch);
     return $result;
