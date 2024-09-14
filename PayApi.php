@@ -187,16 +187,18 @@ class PayApi {
                 $attempts++;
                 $this->error_log (125,"curl timeout, attempt number ".$attempts);
             } else {
+                $this->error_log("curl_post error ".curl_error($ch));
                 throw new \Exception ("cURL POST error : ".curl_error($ch));
                 return false;
             }
             if ($attempts >= BLOTTO_CURL_ATTEMPTS) {
+                $this->error_log("curl_post too many timeouts: $attempts");
                 throw new \Exception ("cURL POST timeout attempts: $attempts");
                 return false;
             }
         }
         if ($attempts) {
-            $this->error_log("$attempts attempt(s) on this chunk");
+            $this->error_log("$attempts timeout(s) on this curl_post");
         }
     curl_close ($ch);
     return $result;
@@ -400,10 +402,10 @@ class PayApi {
 
             $response = $this->handle ($what, $request);
 
-            $mailbody = "";
             if (is_array($response)) {
                 $response = $response['response'];
                 if (array_key_exists('summary',$response)) {
+                    $mailbody .= "Response summary:\n".print_r($response['summary'],true);
                     $good += $response['summary']['totalSuccessful'];
                     $bad  += $response['summary']['totalFailed'];
                     $mandates_array = $response['mandates']['mandate'];
