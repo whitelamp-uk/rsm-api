@@ -174,7 +174,7 @@ class PayApi {
             CURLOPT_FRESH_CONNECT => 1,
             CURLOPT_RETURNTRANSFER => 1,
             CURLOPT_FORBID_REUSE => 1,
-            CURLOPT_TIMEOUT => 45,
+            CURLOPT_TIMEOUT => RSM_TIMEOUT,
             CURLOPT_POSTFIELDS => http_build_query ($post)
         );
 
@@ -198,7 +198,7 @@ class PayApi {
             }
         }
         if ($attempts) {
-            $this->error_log (125,"$attempts attempt(s) on this curl_post");
+            $this->error_log (125,"$attempts failed attempt(s) on this curl_post");
         }
     curl_close ($ch);
     return $result;
