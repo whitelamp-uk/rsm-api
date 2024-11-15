@@ -494,7 +494,7 @@ class PayApi {
 // TODO: if table becomes persistent in the future we will have to be more clever than this
                 'created'             => $today, // rsm_mandate is ephemeral; if this changes a bit next build, no sweat
                 'updated'             => $today, // ditto
-                'ddRefNo'             => uuid (), // ditto so anything unique will do until next build
+                'ddRefNo'             => uniqid(rand()), // ditto so anything unique will do until next build 
                 'clientRef'           => $mandate['ClientRef'],
                 'name'                => $mandate['Name'],
                 'sortcode'            => $mandate['Sortcode'],
