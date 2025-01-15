@@ -205,7 +205,11 @@ BEGIN
     JOIN `rsm_mandate` AS `m2`
       ON `m2`.`DDRefOrig`=`m1`.`DDRefOrig`
      AND (
-         `m2`.`Amount`!=`m1`.`Amount`
+         `(
+          m2`.`Amount`!=`m1`.`Amount`
+          AND `m2`.`Amount`/5!=`m1`.`Amount`/4.34
+          AND `m2`.`Amount`/4.34!=`m1`.`Amount`/5
+          )
       OR `m2`.`Freq`!=`m1`.`Freq`
      )
      AND `m2`.`id`!=`m1`.`id`
