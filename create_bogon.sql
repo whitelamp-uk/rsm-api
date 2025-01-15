@@ -27,6 +27,8 @@ BEGIN
       ON `m`.`DDRefOrig`=`c`.`DDRefOrig`
     WHERE `c`.`PaidAmount`>0
       AND `m`.`Amount`!=`c`.`PaidAmount`
+      AND `m`.`Amount`/5!=`c`.`PaidAmount`/4.34
+      AND `m`.`Amount`/4.34!=`c`.`PaidAmount`/5
     GROUP BY `c`.`DDRefOrig`
   ;
 END$$
