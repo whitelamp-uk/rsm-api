@@ -453,7 +453,7 @@ class PayApi {
         //echo $sql;
         try {
             $this->connection->query ($sql);
-            tee ("Output {$this->connection->affected_rows} collections\n");
+            tee ("Inserted {$this->connection->affected_rows} collections into ".RSM_TABLE_COLLECTION." table\n");
         }
         catch (\mysqli_sql_exception $e) {
             $this->error_log (121,'SQL insert failed: '.$e->getMessage());
@@ -469,7 +469,7 @@ class PayApi {
         //echo $sql;
         try {
             $this->connection->query ($sql);
-            tee ("Output {$this->connection->affected_rows} mandates\n");
+            tee ("Inserted {$this->connection->affected_rows} mandates into ".RSM_TABLE_MANDATE." table\n");
         }
         catch (\mysqli_sql_exception $e) {
             $this->error_log (120,'SQL insert failed: '.$e->getMessage());
@@ -642,11 +642,19 @@ class PayApi {
     }
 
     private function table_load ($data,$tablename,$fields) {
+        $loggit = true;
         $sql                = "INSERT INTO ".$tablename." (`".implode('`, `', $fields)."`) VALUES\n";
         foreach ($data as $record) {
             $dbline         = [];
             foreach ($fields as $srcname=>$destname) {
-                if (is_array($record[$srcname])) {
+                // temporary log thing
+                if (!isset($record[$srcname]) && $loggit) {
+                    echo "RSM missing fields";
+                    print_r($record);
+                    $loggit = false;
+                }
+
+                if (!isset($record[$srcname]) || (isset($record[$srcname]) && is_array($record[$srcname]))) {
                     $record[$srcname] = '';
                 }
                 $dbline[]   = $this->connection->real_escape_string (trim($record[$srcname]));
