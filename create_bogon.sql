@@ -29,6 +29,8 @@ BEGIN
       AND `m`.`Amount`!=`c`.`PaidAmount`
       AND `m`.`Amount`/5!=`c`.`PaidAmount`/4.34
       AND `m`.`Amount`/4.34!=`c`.`PaidAmount`/5
+      AND `m`.`Amount`/60!=`c`.`PaidAmount`/52
+      AND `m`.`Amount`/52!=`c`.`PaidAmount`/60
     GROUP BY `c`.`DDRefOrig`
   ;
 END$$
@@ -210,6 +212,8 @@ BEGIN
            `m2`.`Amount`!=`m1`.`Amount`
             AND `m2`.`Amount`/5!=`m1`.`Amount`/4.34
             AND `m2`.`Amount`/4.34!=`m1`.`Amount`/5
+            AND `m2`.`Amount`/60!=`m1`.`Amount`/52
+            AND `m2`.`Amount`/52!=`m1`.`Amount`/60
          )
      )
      AND `m2`.`id`!=`m1`.`id`
