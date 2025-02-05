@@ -264,7 +264,7 @@ BEGIN
   ;
 END$$
 
-
+-- TODO this deals with small monthly collections going 4.34->5.00 etc but for now we ignore large annual collections
 DELIMITER $$
 DROP PROCEDURE IF EXISTS `bogonCheckPaidAmount`$$
 CREATE PROCEDURE `bogonCheckPaidAmount` (
@@ -279,14 +279,15 @@ BEGIN
        ,`DDRefOrig`
        ,`ClientRef`
        ,CONCAT(
-          COUNT(DISTINCT `PaidAmount`)
+          COUNT(DISTINCT FLOOR(`PaidAmount`/4.34))
          ,' different collection amounts: '
          ,GROUP_CONCAT(DISTINCT `PaidAmount`)
         )
       )
-     ,COUNT(DISTINCT `PaidAmount`) AS `qty`
+     ,COUNT(DISTINCT FLOOR(`PaidAmount`/4.34)) AS `qty`
     FROM `rsm_collection`
     WHERE `PaidAmount`>0
+      AND `PaidAmount`<100
     GROUP BY `ClientRef`
     HAVING `qty`>1
   ;
