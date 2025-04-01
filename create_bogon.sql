@@ -264,7 +264,8 @@ BEGIN
   ;
 END$$
 
--- TODO this deals with small monthly collections going 4.34->5.00 etc but for now we ignore large annual collections
+-- Divide by 4.34 works up to £30 / six tickets.
+-- Then there's something of a gap up to £52.  But there are no quarterly or six-monthly collections to deal with.
 DELIMITER $$
 DROP PROCEDURE IF EXISTS `bogonCheckPaidAmount`$$
 CREATE PROCEDURE `bogonCheckPaidAmount` (
@@ -287,7 +288,27 @@ BEGIN
      ,COUNT(DISTINCT FLOOR(`PaidAmount`/4.34)) AS `qty`
     FROM `rsm_collection`
     WHERE `PaidAmount`>0
-      AND `PaidAmount`<100
+      AND `PaidAmount`<=30
+    GROUP BY `ClientRef`
+    HAVING `qty`>1
+  ;
+  INSERT INTO `rsm_bogon`
+    SELECT
+      null
+     ,'Collection PaidAmount not unique per DDRefOrig'
+     ,CONCAT_WS(
+        ', '
+       ,`DDRefOrig`
+       ,`ClientRef`
+       ,CONCAT(
+          COUNT(DISTINCT FLOOR(`PaidAmount`/52))
+         ,' different collection amounts: '
+         ,GROUP_CONCAT(DISTINCT `PaidAmount`)
+        )
+      )
+     ,COUNT(DISTINCT FLOOR(`PaidAmount`/52)) AS `qty`
+    FROM `rsm_collection`
+    WHERE `PaidAmount`>30
     GROUP BY `ClientRef`
     HAVING `qty`>1
   ;
