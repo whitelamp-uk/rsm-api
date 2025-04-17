@@ -402,36 +402,31 @@ class PayApi {
 
             $response = $this->handle ($what, $request);
 
-            if (is_array($response)) {
+            if (isset($response['response']['summary'])) {
                 $response = $response['response'];
-                if (array_key_exists('summary',$response)) {
-                    $mailbody .= "Response summary:\n".print_r($response['summary'],true);
-                    $good += $response['summary']['totalSuccessful'];
-                    $bad  += $response['summary']['totalFailed'];
-                    $mandates_array = $response['mandates']['mandate'];
-                    if (isset($mandates_array['status'])) { // special case when only one
-                        $mandates_array = array($mandates_array);
-                    }
-                    foreach ($mandates_array as $mandate) {
-                        // clientRef, status, error code(s) (if any) per line
-                        $mailbody .= $mandate['clientRef'].' '.$mandate['status']."\n";
-                        if (isset($mandate['errors'])) {
-                            $ocr = explode (BLOTTO_CREF_SPLITTER,$mandate['clientRef']) [0];
-                            $mailbody .= adminer('Supporters','original_client_ref','=',$ocr)."\n";
-                            $mailbody .= print_r($mandate['errors'], true);
-                        }
-                    }
+                $mailbody .= "Response summary:\n".print_r($response['summary'],true);
+                $good += $response['summary']['totalSuccessful'];
+                $bad  += $response['summary']['totalFailed'];
+                $mandates_array = $response['mandates']['mandate'];
+                if (isset($mandates_array['status'])) { // special case when only one
+                    $mandates_array = array($mandates_array);
                 }
-                else {
-                    $bad += count ($mandates);
-                    $mailbody .= "No summary in RSM response:\n";
-                    $mailbody .= print_r($response, true);
+                foreach ($mandates_array as $mandate) {
+                    // clientRef, status, error code(s) (if any) per line
+                    $mailbody .= $mandate['clientRef'].' '.$mandate['status']."\n";
+                    if (isset($mandate['errors'])) {
+                        $ocr = explode (BLOTTO_CREF_SPLITTER,$mandate['clientRef']) [0];
+                        $mailbody .= adminer('Supporters','original_client_ref','=',$ocr)."\n";
+                        $mailbody .= print_r($mandate['errors'], true);
+                    }
                 }
             }
             else {
                 $bad += count ($mandates);
-                $mailbody .= "RSM response not an array:\n";
+                $mailbody .= "No summary in RSM response:\n";
                 $mailbody .= print_r($response, true);
+                $mailbody .= "\nRequest was:\n";
+                $mailbody .= $what."\n".$body;
             }
         }
         $subj = "RSM insert mandates for ".strtoupper(BLOTTO_ORG_USER).", $good good, $bad bad";
