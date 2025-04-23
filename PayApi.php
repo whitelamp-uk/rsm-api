@@ -254,6 +254,7 @@ class PayApi {
 
     private function handle ($what,$request) {
         $header             = $this->header($what.'Request');
+        $request            = iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $request);
         $sig                = $this->signature ($request);
         $footer             = $this->footer ();
         $postdata           = array ('xml'=>$header.$request.$sig.$footer);
