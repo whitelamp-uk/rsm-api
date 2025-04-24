@@ -255,6 +255,18 @@ class PayApi {
     private function handle ($what,$request) {
         $header             = $this->header($what.'Request');
         $request            = iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $request);
+        if ($request === false) {
+            print_r(iconv_get_encoding());
+            echo "\n";
+            echo "ICONV_IMPL ".ICONV_IMPL."\n";
+            echo "ICONV_VERSION ".ICONV_VERSION."\n";
+            echo "locale:\n";
+            print_r(explode(';', setlocale(LC_ALL, 0)));
+            echo "\n";
+            throw new \Exception ('iconv() failed');
+            return false;
+        }
+
         $sig                = $this->signature ($request);
         $footer             = $this->footer ();
         $postdata           = array ('xml'=>$header.$request.$sig.$footer);
