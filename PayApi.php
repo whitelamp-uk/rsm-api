@@ -382,9 +382,7 @@ class PayApi {
                 if (empty($m['StartDate'])) { // Y-m-d
                     $m['StartDate'] = collection_startdate (gmdate('Y-m-d'),$m['PayDay']);
                 } 
-                $dt_csd = \DateTime::createFromFormat ('Y-m-d',$m['StartDate']); // is there a better way of converting?
-                $rsm_startdate = $dt_csd->format ('d/m/Y');
-
+                $rsm_startdate = implode('/', array_reverse(explode('-', $m['StartDate']))); // 'd/m/Y'
                 $action = (strtolower($m['Type']) == 'c') ? 'N' : 'A'; // New, Amend, Delete
                 //some optional elements commented out - but left here for reference!
                 $body .= "<mandate>";
