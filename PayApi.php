@@ -379,8 +379,10 @@ class PayApi {
                     return false;
                 }
                 $sortcode = str_replace ('-','',$m['Sortcode']);
-                $csd = collection_startdate (gmdate('Y-m-d'),$m['PayDay']);
-                $dt_csd = \DateTime::createFromFormat ('Y-m-d',$csd); // is there a better way of converting?
+                if (!isset($m['StartDate'])) { // Y-m-d
+                    $m['StartDate'] = collection_startdate (gmdate('Y-m-d'),$m['PayDay']);
+                } 
+                $dt_csd = \DateTime::createFromFormat ('Y-m-d',$m['StartDate']); // is there a better way of converting?
                 $rsm_startdate = $dt_csd->format ('d/m/Y');
 
                 $action = (strtolower($m['Type']) == 'c') ? 'N' : 'A'; // New, Amend, Delete
