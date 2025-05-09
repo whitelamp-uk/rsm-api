@@ -379,7 +379,7 @@ class PayApi {
                     return false;
                 }
                 $sortcode = str_replace ('-','',$m['Sortcode']);
-                if (!isset($m['StartDate'])) { // Y-m-d
+                if (empty($m['StartDate'])) { // Y-m-d
                     $m['StartDate'] = collection_startdate (gmdate('Y-m-d'),$m['PayDay']);
                 } 
                 $dt_csd = \DateTime::createFromFormat ('Y-m-d',$m['StartDate']); // is there a better way of converting?
