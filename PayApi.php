@@ -454,6 +454,13 @@ class PayApi {
         $this->bogon_check ();
     }
 
+    public function modify_mandate ($m)  {
+        /*
+        TODO
+        see notes for same method in paysuite-api
+        */
+    }
+
     private function output_collections ( ) {
         $sql                = "INSERT INTO `".RSM_TABLE_COLLECTION."`\n";
         $sql               .= file_get_contents (__DIR__.'/select_collection.sql');
