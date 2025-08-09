@@ -358,12 +358,13 @@ class PayApi {
         $this->output_collections ();
     }
 
-    public function insert_mandates ($allmandates,&$bad=0,&$good=0)  {
+    public function insert_mandates ($allmandates,&$bad=0,&$good=0,&$tooearly=0,&$toolate=0)  {
+        // $tooearly just for consistency with paysuite-api - no need to support it here
         if (!count($allmandates)) {
             fwrite (STDERR,"No mandates to insert\n");
             return true;
         }
-        $good = $bad = 0;
+        $good = $bad = $toolate = 0;
         $mailbody = "";
         $chunked = array_chunk($allmandates, 150);
         foreach ($chunked as $mandates) {
@@ -381,7 +382,12 @@ class PayApi {
                 $sortcode = str_replace ('-','',$m['Sortcode']);
                 if (empty($m['StartDate'])) { // Y-m-d
                     $m['StartDate'] = collection_startdate (gmdate('Y-m-d'),$m['PayDay']);
-                } 
+                }
+                if (defined('RSM_LAST_MONTH') && ((string)$m['StartDate'])>RSM_LAST_MONTH.'-31') {
+                    $toolate++;
+                    $mailbody .= "Too late - last allowed RSM2000 StartDate is end of ".RSM_LAST_MONTH.": {$m['ClientRef']} {$m['StartDate']}\n";
+                    continue;
+                }
                 $rsm_startdate = implode('/', array_reverse(explode('-', $m['StartDate']))); // 'd/m/Y'
                 $action = (strtolower($m['Type']) == 'c') ? 'N' : 'A'; // New, Amend, Delete
                 //some optional elements commented out - but left here for reference!
@@ -443,6 +449,9 @@ class PayApi {
             }
         }
         $subj = "RSM insert mandates for ".strtoupper(BLOTTO_ORG_USER).", $good good, $bad bad";
+        if ($toolate>0) {
+            $subj .= ", $toolate too late";
+        }
         mail(BLOTTO_EMAIL_WARN_TO, $subj, $mailbody);
         // whatever happens we continue the build process; email alerts admins to problems
         // and we'll try again on next build.
