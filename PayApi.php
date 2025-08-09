@@ -504,10 +504,10 @@ class PayApi {
 
     public function player_new ($mandate,$db_live=null) {
         // Use API and insert the internal mandate
-        $this->insert_mandates ([$mandate],$bad);
-        if ($bad>0) {
-           // The API did not create the mandate
-           return null;
+        $this->insert_mandates ([$mandate],$bad,$good,$tooearly,$toolate); // convert mandate to array
+        if ($good<1) {
+            // The API did not create the mandate
+            return null;
         }
         $crf = $this->connection->real_escape_string ($mandate['ClientRef']);
         // Insert the internal mandate
