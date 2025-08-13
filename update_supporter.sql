@@ -9,6 +9,7 @@ LEFT JOIN (
     `DDRefOrig`
    ,DATE_ADD(DATE_ADD(MAX(`DateDue`),INTERVAL 1 MONTH),INTERVAL 7 DAY) AS `DateKnown`
   FROM `rsm_collection`
+  WHERE `PayStatus`='PAID'
   GROUP BY `DDRefOrig`
 ) AS `c`
   ON `c`.`DDRefOrig`=`m`.`DDRefOrig`
