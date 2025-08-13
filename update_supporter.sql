@@ -7,7 +7,7 @@ JOIN `blotto_supporter` AS `s`
 LEFT JOIN (
   SELECT
     `DDRefOrig`
-   ,DATE_ADD(DATE_ADD(`DateDue`,INTERVAL 1 MONTH),INTERVAL 7 DAY) AS `DateKnown`
+   ,DATE_ADD(DATE_ADD(MAX(`DateDue`),INTERVAL 1 MONTH),INTERVAL 7 DAY) AS `DateKnown`
   FROM `rsm_collection`
   GROUP BY `DDRefOrig`
 ) AS `c`
