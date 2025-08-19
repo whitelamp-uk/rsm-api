@@ -360,11 +360,13 @@ class PayApi {
 
     public function insert_mandates ($allmandates,&$bad=0,&$good=0,&$tooearly=0,&$toolate=0)  {
         // $tooearly just for consistency with paysuite-api - no need to support it here
+        $bad        = intval ($bad);
+        $good       = intval ($good);
+        $toolate    = intval ($toolate);
         if (!count($allmandates)) {
             fwrite (STDERR,"No mandates to insert\n");
             return true;
         }
-        $good = $bad = $toolate = 0;
         $mailbody = "";
         $chunked = array_chunk($allmandates, 150);
         foreach ($chunked as $mandates) {
