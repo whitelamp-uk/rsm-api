@@ -6,7 +6,7 @@ SELECT
  ,`DDRefOrig`
  ,`ClientRef`
  ,`PaidAmount`
- ,`CollectionType`
+ ,'Paid'
 FROM `rsm_collection`
 WHERE `DateDue`<DATE_SUB(CURDATE(),INTERVAL {{RSM_PAY_INTERVAL}})
   AND `PayStatus`='PAID'
