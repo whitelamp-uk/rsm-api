@@ -362,11 +362,13 @@ class PayApi {
 
     public function insert_mandates ($allmandates,&$bad=0,&$good=0,&$tooearly=0,&$toolate=0)  {
         // $tooearly just for consistency with paysuite-api - no need to support it here
+        $bad        = intval ($bad);
+        $good       = intval ($good);
+        $toolate    = intval ($toolate);
         if (!count($allmandates)) {
             fwrite (STDERR,"No mandates to insert\n");
             return true;
         }
-        $good = $bad = $toolate = 0;
         $mailbody = "";
         $chunked = array_chunk($allmandates, 150);
         foreach ($chunked as $mandates) {
@@ -450,6 +452,7 @@ class PayApi {
                 $mailbody .= $what."\n".$body;
             }
         }
+        $bad -= $toolate;
         $subj = "RSM insert mandates for ".strtoupper(BLOTTO_ORG_USER).", $good good, $bad bad";
         if ($toolate>0) {
             $subj .= ", $toolate too late";
@@ -506,7 +509,7 @@ class PayApi {
 
     public function player_new ($mandate,$db_live=null) {
         // Use API and insert the internal mandate
-        $this->insert_mandates ([$mandate],$bad,$good,$tooearly,$toolate); // convert mandate to array
+        $this->insert_mandates ([$mandate],$bad=0,$good=0,$tooearly=0,$toolate=0); // convert mandate to array
         if ($good<1) {
             // The API did not create the mandate
             return null;
