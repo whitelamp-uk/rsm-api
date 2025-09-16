@@ -9,6 +9,8 @@ CREATE TABLE `rsm_collection` (
   `Amount` decimal(10,2) DEFAULT NULL,
   `PayStatus` varchar(255) CHARACTER SET ascii DEFAULT NULL,
   `PaidAmount` decimal (10,2) DEFAULT NULL,
+  `FailReason` varchar(255),
+  `CollectionType` varchar (16),
   KEY `DDRefOrig` (`DDRefOrig`),
   KEY `ClientRef` (`ClientRef`),
   KEY `DateDue` (`DateDue`),

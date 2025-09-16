@@ -65,6 +65,8 @@ class PayApi {
         'amount'              => 'Amount',
         'payStatus'           => 'PayStatus',
         'paidAmount'          => 'PaidAmount',
+        'failReason'          => 'FailReason',
+        'collectionType'      => 'CollectionType'
     );
     private $org;
 
