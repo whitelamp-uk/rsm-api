@@ -21,7 +21,6 @@ BEGIN
         `DDRefOrig`
        ,SUM(`IsCurrent`>0) as qty
       FROM `rsm_mandate`
-      WHERE `Status`!='PENDING'
       GROUP BY `DDRefOrig`
     ) AS `t`
     GROUP BY `quantity_current`
@@ -58,7 +57,6 @@ BEGIN
        ,MAX(`StartDate`) AS `LastStartDate`
        ,MAX(`IsCurrent`) AS `Current`
       FROM `rsm_mandate`
-      WHERE `Status`!='PENDING'
       GROUP BY `DDRefOrig`
       HAVING `Current`=0
     ) AS `started`
@@ -101,7 +99,6 @@ BEGIN
        ,MAX(`Created`) AS `LastCreated`
        ,MAX(`IsCurrent`) AS `Current`
       FROM `rsm_mandate`
-      WHERE `Status`!='PENDING'
       GROUP BY `DDRefOrig`
       HAVING `Current`=0
     ) AS `created`
@@ -144,7 +141,6 @@ BEGIN
         `DDRefOrig`
        ,MAX(`IsCurrent`) AS `Current`
       FROM `rsm_mandate`
-      WHERE `Status`!='PENDING'
       GROUP BY `DDRefOrig`
       HAVING `Current`=0
     ) AS `failed`
@@ -188,7 +184,6 @@ BEGIN
        ,MAX(`Updated`) AS `LastUpdated`
        ,MAX(`IsCurrent`) AS `Current`
       FROM `rsm_mandate`
-      WHERE `Status`!='PENDING'
       GROUP BY `DDRefOrig`
       HAVING `Current`=0
     ) AS `updated`
