@@ -509,7 +509,8 @@ class PayApi {
 
     public function player_new ($mandate,$db_live=null) {
         // Use API and insert the internal mandate
-        $this->insert_mandates ([$mandate],$bad=0,$good=0,$tooearly=0,$toolate=0); // convert mandate to array
+        $bad = $good = $tooearly = $toolate = 0;
+        $this->insert_mandates ([$mandate],$bad,$good,$tooearly,$toolate); // convert mandate to array
         if ($good<1) {
             // The API did not create the mandate
             return null;
